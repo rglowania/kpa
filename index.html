@@ -3,79 +3,83 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kaufpreisaufteilung</title>
+<title>KPA-Rechner</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230c1410'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia,serif' font-size='22' font-weight='700' fill='%235d9e7a'>g</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root,[data-theme="dark"]{--bg:#0c1410;--surface:#13201a;--surface2:#192b22;--border:#213328;--accent:#5d9e7a;--accent-lt:#89c4a2;--accent-dim:rgba(93,158,122,0.13);--text:#ddeee5;--text-muted:#6e9480;}
 [data-theme="light"]{--bg:#f0f7f3;--surface:#ffffff;--surface2:#e6f2eb;--border:#bdd8c8;--accent:#2e7a50;--accent-lt:#1e5c3a;--accent-dim:rgba(46,122,80,0.10);--text:#0f1f16;--text-muted:#4d7a5e;}
 @media(prefers-color-scheme:light){:root:not([data-theme]){--bg:#f0f7f3;--surface:#ffffff;--surface2:#e6f2eb;--border:#bdd8c8;--accent:#2e7a50;--accent-lt:#1e5c3a;--accent-dim:rgba(46,122,80,0.10);--text:#0f1f16;--text-muted:#4d7a5e;}}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-weight:300;min-height:100vh;padding:40px 20px 80px;transition:background .25s,color .25s;font-feature-settings:"ss01";}
+*{box-sizing:border-box;margin:0;padding:0;font-feature-settings:"ss01";}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-weight:300;min-height:100vh;padding:28px 20px 80px;transition:background .25s,color .25s;}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(93,158,122,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(93,158,122,0.04) 1px,transparent 1px);background-size:40px 40px;}
-.container{max-width:960px;margin:0 auto;position:relative;z-index:1;}
+.container{max-width:920px;margin:0 auto;position:relative;z-index:1;}
 .theme-toggle{position:fixed;top:18px;right:20px;display:flex;gap:3px;z-index:1000;background:var(--surface);border:1px solid var(--border);padding:4px;}
 .theme-btn{width:28px;height:28px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all .2s;padding:0;}
 .theme-btn:hover{color:var(--accent);}
 .theme-btn.active{color:var(--accent);background:var(--accent-dim);}
 .theme-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-h1{font-family:'Playfair Display',serif;font-size:clamp(26px,5vw,44px);font-weight:600;line-height:1.15;color:var(--text);margin-bottom:10px;}
+header{text-align:center;margin-bottom:32px;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(30px,5vw,46px);font-weight:600;line-height:1.15;color:var(--text);margin-bottom:8px;}
 h1 span{color:var(--accent);}
 .subtitle{font-size:12px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.5px;}
-.card-title{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:18px;}
-.hint{font-size:10px;color:var(--text-muted);margin-top:5px;font-family:'IBM Plex Mono',monospace;line-height:1.5;}
-.disclaimer{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);line-height:1.7;opacity:.7;margin-top:32px;}
-footer{text-align:center;padding:32px 0 0;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--text-muted);opacity:.6;}
-.card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);padding:28px 32px;margin-bottom:20px;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
-label{display:block;margin-bottom:16px;}
-label span.lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;}
-input[type=text],select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;padding:10px 14px;outline:none;transition:border-color .2s;}
-input[type=text]:focus,select:focus{border-color:var(--accent);}
-input[readonly]{opacity:.65;cursor:default;}
-select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235d9e7a'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
-select option{background:var(--bg);}
-.btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;margin-top:8px;}
-.btn:hover{opacity:.85;}
-.btn-sec{background:transparent;color:var(--accent);border:1px solid var(--accent);}
-.result-box{display:none;background:var(--accent-dim);border:1px solid var(--accent);border-left:3px solid var(--accent);padding:28px 32px;margin-top:24px;}
-.result-big{font-family:'Playfair Display',serif;font-size:36px;color:var(--accent);margin:8px 0 4px;}
-.result-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);}
-.result-sub{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted);margin-top:4px;}
-.divider{border:none;border-top:1px solid var(--border);margin:24px 0;}
-.info-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--border);}
-.info-row:last-child{border-bottom:none;}
-.info-row .key{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);}
-.info-row .val{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text);}
-.method-badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border:1px solid var(--accent);color:var(--accent);margin-bottom:16px;}
-.warn{background:rgba(200,140,0,0.1);border:1px solid rgba(200,140,0,0.4);border-left:3px solid #c88c00;padding:12px 16px;margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c88c00;line-height:1.6;}
-.res2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;}
-.split-bar{height:8px;background:var(--surface2);margin:12px 0;overflow:hidden;}
-.split-fill{height:100%;background:var(--accent);transition:width .5s ease;}
-.tab-nav{display:flex;gap:0;border-bottom:1px solid var(--border);}
-.tab-btn{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:10px 18px;background:transparent;border:1px solid var(--border);border-bottom:none;color:var(--text-muted);cursor:pointer;transition:all .2s;margin-right:4px;}
-.tab-btn.active{color:var(--accent);background:var(--accent-dim);border-color:var(--accent);}
-.tab-pane{display:none;padding-top:20px;}
-.tab-pane.active{display:block;}
-.sec-toggle{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);background:transparent;border:none;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:8px;margin-bottom:12px;}
-.sec-toggle::before{content:'▶';font-size:8px;transition:transform .2s;}
-.sec-toggle.open::before{transform:rotate(90deg);}
-.collapsible{display:none;}
-.collapsible.open{display:block;}
-.ak-card{background:var(--surface2);border:1px solid var(--border);padding:16px 20px;margin-bottom:8px;}
-.ak-grid{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-bottom:8px;}
-.ak-remove{background:transparent;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;padding:0 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;height:42px;}
-.ak-remove:hover{border-color:var(--accent);color:var(--accent);}
-.sync-pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;padding:2px 8px;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);margin-left:6px;vertical-align:middle;}
-.export-row{display:flex;gap:12px;margin-top:16px;}
-.export-row .btn{margin-top:0;flex:1;}
-.sync-notice{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);display:flex;align-items:center;gap:6px;margin-top:8px;}
-@media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr;}.res2{grid-template-columns:1fr;}.tab-btn{padding:8px 10px;font-size:9px;}.export-row{flex-direction:column;}}
+.card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);padding:22px 24px;margin-bottom:18px;}
+.card-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);margin-bottom:18px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.field{display:block;margin-bottom:14px;}
+.field-label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:1.8px;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;}
+.field-hint{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text-muted);margin-top:4px;display:block;}
+input[type="text"],input[type="number"],input[type="date"],select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+input:disabled,select:disabled,textarea:disabled{opacity:0.4;cursor:not-allowed;}
+select{cursor:pointer;}
+textarea{resize:vertical;min-height:60px;}
+.method-tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+.method-tab{flex:1;min-width:160px;background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:11px 14px;cursor:pointer;transition:all .2s;text-align:center;}
+.method-tab:hover{border-color:var(--accent);color:var(--accent);}
+.method-tab.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);border-left:3px solid var(--accent);}
+.method-tab .tab-num{display:block;font-size:8px;opacity:0.7;margin-bottom:3px;}
+.method-section{display:none;}
+.method-section.active{display:block;}
+button.primary{width:100%;padding:14px;background:var(--accent);color:#0c1410;border:none;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;font-weight:500;}
+button.primary:hover{opacity:0.85;}
+button.secondary{padding:10px 16px;background:transparent;border:1px solid var(--border);color:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+button.secondary:hover{border-color:var(--accent);color:var(--accent);}
+.result{background:var(--accent-dim);border:1px solid var(--accent);border-left:3px solid var(--accent);padding:24px 26px;margin-top:20px;display:none;}
+.result.show{display:block;}
+.result-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);margin-bottom:18px;}
+.result-bar{display:flex;height:42px;border:1px solid var(--accent);margin-bottom:14px;overflow:hidden;}
+.result-bar-grund{background:var(--surface2);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text);transition:width .4s;}
+.result-bar-gebaeude{background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#0c1410;font-weight:500;transition:width .4s;}
+.result-row{display:grid;grid-template-columns:1fr auto auto;gap:18px;padding:9px 0;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:12px;align-items:center;}
+.result-row:last-of-type{border-bottom:none;}
+.result-row.total{font-size:14px;border-bottom:none;border-top:2px solid var(--accent);margin-top:6px;padding-top:14px;font-weight:500;}
+.result-row .label{color:var(--text-muted);}
+.result-row .pct{color:var(--accent);text-align:right;min-width:62px;}
+.result-row .val{color:var(--text);text-align:right;min-width:120px;}
+.result-row.total .label{color:var(--text);}
+.calculation-details{margin-top:18px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-muted);line-height:1.7;}
+.calculation-details summary{cursor:pointer;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;font-size:9.5px;margin-bottom:10px;}
+.calculation-details summary:hover{opacity:0.8;}
+.calc-row{display:grid;grid-template-columns:1fr auto;gap:14px;padding:4px 0;}
+.calc-row.bold{color:var(--text);border-top:1px solid var(--border);margin-top:6px;padding-top:8px;}
+.warning{background:rgba(220,80,60,0.08);border:1px solid rgba(220,80,60,0.4);border-left:3px solid #dc503c;padding:12px 16px;margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#dc503c;}
+.info{background:var(--accent-dim);border:1px solid var(--accent);border-left:3px solid var(--accent);padding:12px 16px;margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);}
+.disclaimer{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:32px;line-height:1.7;padding:0 14px;opacity:0.7;}
+footer{text-align:center;padding:32px 0 24px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--text-muted);opacity:0.7;}
+.actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+.actions button{flex:1;min-width:130px;}
+.toggle-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.toggle-btn{flex:1;min-width:90px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:9px 12px;cursor:pointer;transition:all .2s;text-align:center;}
+.toggle-btn:hover{border-color:var(--accent);color:var(--accent);}
+.toggle-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+@media(max-width:600px){.grid-2,.grid-3{grid-template-columns:1fr;}.method-tab{min-width:0;}}
+@media print{body::before,.theme-toggle,.actions,.method-tabs,button{display:none!important;}.card{break-inside:avoid;}}
 </style>
 </head>
 <body>
+
 <div class="theme-toggle">
   <button class="theme-btn" id="btn-dark" onclick="setTheme('dark')" title="Dunkel"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
   <button class="theme-btn" id="btn-system" onclick="setTheme('system')" title="System"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
@@ -83,649 +87,677 @@ select option{background:var(--bg);}
 </div>
 
 <div class="container">
-  <header style="text-align:center;margin-bottom:40px;">
-    <h1><span>Kaufpreis</span>aufteilung</h1>
-    <p class="subtitle">Grund &amp; Boden / Gebäude · BMF-Arbeitshilfe 2026 · §§ 6 ff. ImmoWertV</p>
+
+  <header>
+    <h1><span>KPA</span>-Rechner</h1>
+    <p class="subtitle">Kaufpreisaufteilung nach BMF-Arbeitshilfe · Stand März 2026</p>
   </header>
 
-  <div class="tab-nav">
-    <button class="tab-btn active" id="tb-ak" onclick="showTab('ak',this)">① AK/HK</button>
-    <button class="tab-btn" id="tb-kpa" onclick="showTab('kpa',this)">② KPA-Rechner</button>
-    <button class="tab-btn" id="tb-fiktiv" onclick="showTab('fiktiv',this)">Fiktives Baujahr</button>
+  <!-- Stammdaten -->
+  <div class="card">
+    <div class="card-title">1 — Grunddaten</div>
+    <label class="field">
+      <span class="field-label">Lage des Grundstücks</span>
+      <input type="text" id="lage" placeholder="Musterstr. 1, 12345 Musterstadt">
+    </label>
+    <div class="grid-2">
+      <label class="field">
+        <span class="field-label">Grundstücksart</span>
+        <select id="gebaeudeart" onchange="onGebaeudeartChange()">
+          <optgroup label="Ein- und Zweifamilienhäuser">
+            <option value="1.01">EFH freistehend, KG, EG, DG voll ausgebaut</option>
+            <option value="1.02">EFH freistehend, KG, EG, DG nicht ausgebaut</option>
+            <option value="1.03">EFH freistehend, KG, EG, Flachdach</option>
+            <option value="1.11">EFH freistehend, KG, EG, OG, DG voll ausgebaut</option>
+            <option value="1.12">EFH freistehend, KG, EG, OG, DG nicht ausgebaut</option>
+            <option value="1.13">EFH freistehend, KG, EG, OG, Flachdach</option>
+            <option value="1.21">EFH freistehend, EG, n.unt., DG voll ausgebaut</option>
+            <option value="1.22">EFH freistehend, EG, n.unt., DG nicht ausgebaut</option>
+            <option value="1.23">EFH freistehend, EG, n.unt., Flachdach</option>
+            <option value="1.31">EFH freistehend, EG, OG, n.unt., DG voll ausgebaut</option>
+            <option value="1.32">EFH freistehend, EG, OG, n.unt., DG nicht ausgebaut</option>
+            <option value="1.33">EFH freistehend, EG, OG, n.unt., Flachdach</option>
+            <option value="2.01">Doppel-/Reihenend., KG, EG, DG voll ausgebaut</option>
+            <option value="2.11">Doppel-/Reihenend., KG, EG, OG, DG voll ausgebaut</option>
+            <option value="3.01">Reihenmittelh., KG, EG, DG voll ausgebaut</option>
+            <option value="3.11">Reihenmittelh., KG, EG, OG, DG voll ausgebaut</option>
+          </optgroup>
+          <optgroup label="Mehrfamilienhäuser / Wohnungseigentum">
+            <option value="MFH">Mietwohngrundstück (Mehrfamilienhaus)</option>
+            <option value="WE" selected>Wohnungseigentum (Eigentumswohnung)</option>
+          </optgroup>
+          <optgroup label="Gemischt genutzt / Geschäft">
+            <option value="MIX">Gemischt genutztes Grundstück (25–75% Wohnen)</option>
+            <option value="GH">Geschäftsgrundstück, Geschäftshaus</option>
+            <option value="BG">Geschäftsgrundstück, Bürogebäude</option>
+          </optgroup>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Datum des Kaufvertrages</span>
+        <input type="date" id="kaufdatum">
+      </label>
+    </div>
+    <div class="grid-2">
+      <label class="field">
+        <span class="field-label">Kaufpreis in € (inkl. Nebenkosten)</span>
+        <input type="text" id="kaufpreis" placeholder="z. B. 350.000" oninput="formatDE(this)" onblur="formatDE(this)">
+        <span class="field-hint">Inkl. Grunderwerbsteuer, Makler, Notar</span>
+      </label>
+      <label class="field">
+        <span class="field-label">Ursprüngliches Baujahr</span>
+        <input type="number" id="baujahr" placeholder="z. B. 1995" min="1850" max="2030">
+      </label>
+    </div>
+    <div class="grid-3">
+      <label class="field">
+        <span class="field-label">Wohn-/Nutzfläche in m²</span>
+        <input type="text" id="flaeche" placeholder="z. B. 120" oninput="formatDE(this)" onblur="formatDE(this)">
+      </label>
+      <label class="field">
+        <span class="field-label">Garagenstellplätze</span>
+        <input type="number" id="garagen" min="0" value="0">
+      </label>
+      <label class="field">
+        <span class="field-label">Tiefgaragenstellplätze</span>
+        <input type="number" id="tiefgaragen" min="0" value="0">
+      </label>
+    </div>
+    <div class="grid-2" id="meaSection" style="display:none;">
+      <label class="field">
+        <span class="field-label">Miteigentumsanteil — Zähler</span>
+        <input type="number" id="meaZaehler" min="0" placeholder="z. B. 70">
+      </label>
+      <label class="field">
+        <span class="field-label">Miteigentumsanteil — Nenner</span>
+        <input type="number" id="meaNenner" min="0" placeholder="z. B. 1000">
+      </label>
+    </div>
   </div>
 
-  <!-- ══════════════════ TAB AK/HK ══════════════════ -->
-  <div class="tab-pane active" id="tab-ak">
-    <div class="card" style="margin-top:20px;">
-      <div class="card-title">Anschaffungskosten / Herstellungskosten</div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Kaufpreis und Nebenkosten erfassen. Die Summe wird automatisch in den KPA-Rechner übertragen.</p>
-      <div class="ak-card">
-        <label style="margin-bottom:0;"><span class="lbl">Kaufpreis (€)</span>
-          <input type="text" id="ak_kaufpreis" placeholder="0,00" onblur="fmtInput(this);akCalc()" onfocus="rawInput(this)">
-        </label>
-      </div>
-      <div id="ak-nk-rows"></div>
-      <button class="btn btn-sec" onclick="addNK()" style="width:auto;padding:10px 20px;margin-top:4px;margin-bottom:12px;">+ Nebenkosten hinzufügen</button>
-      <hr class="divider">
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;">
-        <div>
-          <div class="result-label">Summe AK/HK inkl. Nebenkosten</div>
-          <div style="font-family:'Playfair Display',serif;font-size:32px;color:var(--accent);margin:6px 0;" id="ak-summe">0,00 €</div>
-        </div>
-        <div class="sync-notice">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          Wird automatisch in KPA-Rechner übernommen
-        </div>
-      </div>
+  <!-- Grund und Boden -->
+  <div class="card">
+    <div class="card-title">2 — Grund und Boden</div>
+    <div class="grid-2">
+      <label class="field">
+        <span class="field-label">Grundstücksgröße in m²</span>
+        <input type="text" id="grundstuecksgroesse" placeholder="z. B. 500" oninput="formatDE(this)" onblur="formatDE(this)">
+      </label>
+      <label class="field">
+        <span class="field-label">Bodenrichtwert in €/m²</span>
+        <input type="text" id="bodenrichtwert" placeholder="z. B. 250" oninput="formatDE(this)" onblur="formatDE(this)">
+      </label>
     </div>
-
-    <div class="card">
-      <div class="card-title">Aufteilung nach KPA-Ergebnis <span class="sync-pill">Auto-Sync</span></div>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;font-family:'IBM Plex Mono',monospace;">Das Verhältnis wird nach der Berechnung im KPA-Rechner automatisch hier eingetragen.</p>
-      <div class="grid2">
-        <label>
-          <span class="lbl">Gebäudeanteil % <span style="color:var(--accent);">(aus KPA)</span></span>
-          <input type="text" id="ak_geb_pct" placeholder="— nach KPA-Berechnung —" readonly style="border-color:var(--accent);">
-        </label>
-        <label>
-          <span class="lbl">Bodenanteil %</span>
-          <input type="text" id="ak_bod_pct" placeholder="—" readonly>
-        </label>
-      </div>
-      <div class="res2" id="ak-result" style="display:none;">
-        <div>
-          <div class="result-label">Grund und Boden</div>
-          <div style="font-family:'Playfair Display',serif;font-size:28px;color:var(--text);margin:6px 0;" id="ak-res-boden">—</div>
-        </div>
-        <div>
-          <div class="result-label">Gebäude (BMG AfA)</div>
-          <div style="font-family:'Playfair Display',serif;font-size:28px;color:var(--accent);margin:6px 0;" id="ak-res-geb">—</div>
-          <div class="hint">→ AfA-Bemessungsgrundlage § 7 EStG</div>
-        </div>
-      </div>
-      <div id="ak-export-row" style="display:none;">
-        <hr class="divider">
-        <div class="export-row">
-          <button class="btn btn-sec" onclick="exportExcel()">&#8203;
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            Excel exportieren
-          </button>
-          <button class="btn btn-sec" onclick="exportPDF()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
-            PDF exportieren
-          </button>
-        </div>
-      </div>
+    <div class="grid-2">
+      <label class="field">
+        <span class="field-label">Hinterland-Fläche in m² <span style="text-transform:none;letter-spacing:0;">(optional)</span></span>
+        <input type="text" id="flaeche2" placeholder="0" oninput="formatDE(this)" onblur="formatDE(this)">
+        <span class="field-hint">Selbständig nutzbare Teilfläche § 41 ImmoWertV</span>
+      </label>
+      <label class="field">
+        <span class="field-label">Wert der Hinterland-Fläche in €/m²</span>
+        <input type="text" id="wert2" placeholder="0" oninput="formatDE(this)" onblur="formatDE(this)">
+        <span class="field-hint">Üblich: 25 % des Bodenrichtwerts</span>
+      </label>
     </div>
   </div>
 
-  <!-- ══════════════════ TAB KPA ══════════════════ -->
-  <div class="tab-pane" id="tab-kpa">
-    <div class="card" style="margin-top:20px;">
-      <div class="card-title">1 · Grunddaten</div>
-      <div class="grid2">
-        <label><span class="lbl">Lage des Grundstücks</span>
-          <input type="text" id="lage" placeholder="Musterstr. 1, 12345 Musterstadt">
-        </label>
-        <label><span class="lbl">Datum Kaufvertrag</span>
-          <input type="text" id="kaufdatum" placeholder="TT.MM.JJJJ" onblur="parseDatum(this)">
-        </label>
-        <label>
-          <span class="lbl">Kaufpreis inkl. Nebenkosten (€) <span class="sync-pill">Auto-Sync</span></span>
-          <input type="text" id="kaufpreis" placeholder="— aus AK/HK übernommen —" readonly style="border-color:var(--accent);">
-          <span class="hint">Wird automatisch aus AK/HK-Rechner übernommen</span>
-        </label>
-        <label><span class="lbl">Grundstücksart</span>
-          <select id="grundstuecksart" onchange="updateVisibility()">
-            <option value="efh_gen">Ein- und Zweifamilienhäuser (allgemein)</option>
-            <optgroup label="EFH freistehend">
-              <option value="1.01">[EFH] freistehend, KG, EG, DG voll ausgebaut</option>
-              <option value="1.02">[EFH] freistehend, KG, EG, DG nicht ausgebaut</option>
-              <option value="1.03">[EFH] freistehend, KG, EG, Flachdach/flach gen.</option>
-              <option value="1.11">[EFH] freistehend, KG, EG, OG, DG voll ausgebaut</option>
-              <option value="1.12">[EFH] freistehend, KG, EG, OG, DG nicht ausgebaut</option>
-              <option value="1.13">[EFH] freistehend, KG, EG, OG, Flachdach/flach gen.</option>
-              <option value="1.21">[EFH] freistehend, EG, nicht unterkellert, DG voll</option>
-              <option value="1.22">[EFH] freistehend, EG, nicht unterkellert, DG nicht</option>
-              <option value="1.23">[EFH] freistehend, EG, nicht unterkellert, Flachdach</option>
-              <option value="1.31">[EFH] freistehend, EG, OG, nicht unterkellert, DG voll</option>
-              <option value="1.32">[EFH] freistehend, EG, OG, nicht unterkellert, DG nicht</option>
-              <option value="1.33">[EFH] freistehend, EG, OG, nicht unterkellert, Flachdach</option>
-            </optgroup>
-            <optgroup label="ZFH freistehend">
-              <option value="1.011">[ZFH] freistehend, KG, EG, DG voll ausgebaut</option>
-              <option value="1.021">[ZFH] freistehend, KG, EG, DG nicht ausgebaut</option>
-              <option value="1.031">[ZFH] freistehend, KG, EG, Flachdach/flach gen.</option>
-              <option value="1.111">[ZFH] freistehend, KG, EG, OG, DG voll ausgebaut</option>
-              <option value="1.121">[ZFH] freistehend, KG, EG, OG, DG nicht ausgebaut</option>
-              <option value="1.131">[ZFH] freistehend, KG, EG, OG, Flachdach/flach gen.</option>
-              <option value="1.211">[ZFH] freistehend, EG, nicht unterkellert, DG voll</option>
-              <option value="1.221">[ZFH] freistehend, EG, nicht unterkellert, DG nicht</option>
-              <option value="1.231">[ZFH] freistehend, EG, nicht unterkellert, Flachdach</option>
-              <option value="1.311">[ZFH] freistehend, EG, OG, nicht unterkellert, DG voll</option>
-              <option value="1.321">[ZFH] freistehend, EG, OG, nicht unterkellert, DG nicht</option>
-              <option value="1.331">[ZFH] freistehend, EG, OG, nicht unterkellert, Flachdach</option>
-            </optgroup>
-            <optgroup label="Doppel-/Reihenendhäuser">
-              <option value="2.01">[EFH/ZFH] Doppel-/Reihenendh., KG, EG, DG voll</option>
-              <option value="2.02">[EFH/ZFH] Doppel-/Reihenendh., KG, EG, DG nicht</option>
-              <option value="2.03">[EFH/ZFH] Doppel-/Reihenendh., KG, EG, Flachdach</option>
-              <option value="2.11">[EFH/ZFH] Doppel-/Reihenendh., KG, EG, OG, DG voll</option>
-              <option value="2.12">[EFH/ZFH] Doppel-/Reihenendh., KG, EG, OG, DG nicht</option>
-              <option value="2.13">[EFH/ZFH] Doppel-/Reihenendh., KG, EG, OG, Flachdach</option>
-              <option value="2.21">[EFH/ZFH] Doppel-/Reihenendh., EG, nicht ukellert, DG voll</option>
-              <option value="2.22">[EFH/ZFH] Doppel-/Reihenendh., EG, nicht ukellert, DG nicht</option>
-              <option value="2.23">[EFH/ZFH] Doppel-/Reihenendh., EG, nicht ukellert, Flachdach</option>
-              <option value="2.31">[EFH/ZFH] Doppel-/Reihenendh., EG, OG, nicht ukellert, DG voll</option>
-              <option value="2.32">[EFH/ZFH] Doppel-/Reihenendh., EG, OG, nicht ukellert, DG nicht</option>
-              <option value="2.33">[EFH/ZFH] Doppel-/Reihenendh., EG, OG, nicht ukellert, Flachdach</option>
-            </optgroup>
-            <optgroup label="Reihenmittelhäuser">
-              <option value="3.01">[EFH/ZFH] Reihenmittelh., KG, EG, DG voll</option>
-              <option value="3.02">[EFH/ZFH] Reihenmittelh., KG, EG, DG nicht</option>
-              <option value="3.03">[EFH/ZFH] Reihenmittelh., KG, EG, Flachdach</option>
-              <option value="3.11">[EFH/ZFH] Reihenmittelh., KG, EG, OG, DG voll</option>
-              <option value="3.12">[EFH/ZFH] Reihenmittelh., KG, EG, OG, DG nicht</option>
-              <option value="3.13">[EFH/ZFH] Reihenmittelh., KG, EG, OG, Flachdach</option>
-              <option value="3.21">[EFH/ZFH] Reihenmittelh., EG, nicht ukellert, DG voll</option>
-              <option value="3.22">[EFH/ZFH] Reihenmittelh., EG, nicht ukellert, DG nicht</option>
-              <option value="3.23">[EFH/ZFH] Reihenmittelh., EG, nicht ukellert, Flachdach</option>
-              <option value="3.31">[EFH/ZFH] Reihenmittelh., EG, OG, nicht ukellert, DG voll</option>
-              <option value="3.32">[EFH/ZFH] Reihenmittelh., EG, OG, nicht ukellert, DG nicht</option>
-              <option value="3.33">[EFH/ZFH] Reihenmittelh., EG, OG, nicht ukellert, Flachdach</option>
-            </optgroup>
-            <option value="mfh">Mietwohngrundstücke (Mehrfamilienhäuser)</option>
-            <option value="mfh_te">Teileigentum: Mietwohngrundstücke</option>
-            <option value="we">Wohnungseigentum [WE]</option>
-            <option value="gem_w">Gemischt genutzt (gewerbl. Anteil &lt; 50%)</option>
-            <option value="gem_w_te">Teileigentum: gemischt genutzt (&lt; 50%)</option>
-            <option value="gem_g">Gemischt genutzt (gewerbl. Anteil &gt; 50%)</option>
-            <option value="gem_g_te">Teileigentum: gemischt genutzt (&gt; 50%)</option>
-            <option value="gesc">Geschäftsgrundstücke, Geschäftshäuser</option>
-            <option value="gesc_te">Teileigentum: Geschäftsgrundstücke (Geschäfts.)</option>
-            <option value="buero">Geschäftsgrundstücke, Bürogebäude</option>
-            <option value="buero_te">Teileigentum: Geschäftsgrundstücke (Bürog.)</option>
+  <!-- Verfahrenswahl -->
+  <div class="card">
+    <div class="card-title">3 — Bewertungsverfahren</div>
+    <div class="method-tabs">
+      <button class="method-tab" id="tab-vw" onclick="selectMethod('vw')">
+        <span class="tab-num">Verfahren 1</span>Vergleichswert
+      </button>
+      <button class="method-tab" id="tab-ew" onclick="selectMethod('ew')">
+        <span class="tab-num">Verfahren 2</span>Ertragswert
+      </button>
+      <button class="method-tab active" id="tab-sw" onclick="selectMethod('sw')">
+        <span class="tab-num">Verfahren 3</span>Sachwert
+      </button>
+    </div>
+
+    <!-- Vergleichswertverfahren -->
+    <div class="method-section" id="section-vw">
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">Anwendbar bei Wohnungseigentum oder Ein-/Zweifamilienhäusern, wenn vom Gutachterausschuss Vergleichsfaktoren (Immobilienrichtwerte) vorliegen.</p>
+      <div class="grid-2">
+        <label class="field">
+          <span class="field-label">Bezugsmaßstab</span>
+          <select id="vwBezug">
+            <option value="wf">Wohn-/Nutzfläche</option>
+            <option value="bgf">Brutto-Grundfläche</option>
           </select>
         </label>
-        <label><span class="lbl">Baujahr (ggf. fiktiv)</span>
-          <input type="text" id="baujahr" placeholder="z. B. 1985">
-          <span class="hint">Ggf. fiktives Baujahr aus Tab verwenden</span>
-        </label>
-        <label><span class="lbl">Wohn- bzw. Nutzfläche (m²)</span>
-          <input type="text" id="wohnflaeche" placeholder="0,00" onblur="fmtInput(this)" onfocus="rawInput(this)">
-        </label>
-        <label><span class="lbl">Garagenstellplätze (Anzahl)</span>
-          <input type="text" id="garagen" placeholder="0" onblur="fmtInput(this)" onfocus="rawInput(this)">
-        </label>
-        <label><span class="lbl">Tiefgaragenstellplätze (Anzahl)</span>
-          <input type="text" id="tiefgaragen" placeholder="0" onblur="fmtInput(this)" onfocus="rawInput(this)">
+        <label class="field">
+          <span class="field-label">Objektspez. Vergleichsfaktor in €/m²</span>
+          <input type="text" id="vwFaktor" placeholder="z. B. 2.450" oninput="formatDE(this)" onblur="formatDE(this)">
         </label>
       </div>
-      <div id="mea-row" style="display:none;">
-        <hr class="divider">
-        <div class="card-title" style="margin-bottom:12px;">Miteigentumsanteil</div>
-        <div class="grid2">
-          <label><span class="lbl">MEA Zähler</span><input type="text" id="mea_z" placeholder="z. B. 70" onblur="fmtInput(this)" onfocus="rawInput(this)"></label>
-          <label><span class="lbl">MEA Nenner</span><input type="text" id="mea_n" placeholder="z. B. 1000" onblur="fmtInput(this)" onfocus="rawInput(this)"></label>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">2 · Grund und Boden</div>
-      <div class="grid2">
-        <label><span class="lbl">Fläche 1 – Grundstücksgröße (m²)</span>
-          <input type="text" id="flaeche1" placeholder="0,00" onblur="fmtInput(this)" onfocus="rawInput(this)">
+      <div class="grid-2">
+        <label class="field">
+          <span class="field-label">Vergleichsfaktor je Garagenstellplatz €</span>
+          <input type="text" id="vwGarage" placeholder="0" oninput="formatDE(this)" onblur="formatDE(this)">
         </label>
-        <label><span class="lbl">Bodenrichtwert Fläche 1 (€/m²)</span>
-          <input type="text" id="brw1" placeholder="0,00" onblur="fmtInput(this)" onfocus="rawInput(this)">
-        </label>
-        <label><span class="lbl">Fläche 2 – Teilfläche Hinterland (m²)</span>
-          <input type="text" id="flaeche2" placeholder="0 (optional)" onblur="fmtInput(this)" onfocus="rawInput(this)">
-          <span class="hint">Selbständig nutzbare Teilfläche über marktübliche Größe</span>
-        </label>
-        <label><span class="lbl">Wert Fläche 2 (€/m²)</span>
-          <input type="text" id="brw2" placeholder="0 (ggf. 25% des BRW)" onblur="fmtInput(this)" onfocus="rawInput(this)">
+        <label class="field">
+          <span class="field-label">Vergleichsfaktor je Tiefgaragenstellplatz €</span>
+          <input type="text" id="vwTiefgarage" placeholder="0" oninput="formatDE(this)" onblur="formatDE(this)">
         </label>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">3 · Bewertungsverfahren</div>
-      <div id="vgw-section">
-        <button class="sec-toggle" onclick="toggleSec('vgw')">Vergleichswertverfahren</button>
-        <div class="collapsible" id="vgw">
-          <div class="grid2">
-            <label><span class="lbl">Vergleichsfaktor vorhanden?</span>
-              <select id="vgw_vorhanden" onchange="updateVisibility()"><option value="nein">Nein</option><option value="ja">Ja</option></select>
-            </label>
-            <div id="vgw-detail" style="display:none;"><label><span class="lbl">Bezugsmaßstab</span>
-              <select id="vgw_bezug"><option value="wfl">Wohn- bzw. Nutzfläche</option><option value="bgf">Brutto-Grundfläche</option></select>
-            </label></div>
-          </div>
-          <div id="vgw-felder" style="display:none;">
-            <div class="grid2">
-              <label><span class="lbl">Vergleichsfaktor obj.-spez. angepasst (€/m²)</span>
-                <input type="text" id="vgw_faktor" placeholder="0,00" onblur="fmtInput(this)" onfocus="rawInput(this)">
-              </label>
-              <label><span class="lbl">Erläuterung Anpassungen</span>
-                <input type="text" id="vgw_erkl" placeholder="z. B. Mietsituation -8%">
-              </label>
-              <label><span class="lbl">Vergleichsfaktor je Garagenstellplatz (€)</span>
-                <input type="text" id="vgw_garage" placeholder="0" onblur="fmtInput(this)" onfocus="rawInput(this)">
-              </label>
-              <label><span class="lbl">Vergleichsfaktor je Tiefgarage (€)</span>
-                <input type="text" id="vgw_tiefgarage" placeholder="0" onblur="fmtInput(this)" onfocus="rawInput(this)">
-              </label>
-            </div>
-          </div>
-        </div>
+    <!-- Ertragswertverfahren -->
+    <div class="method-section" id="section-ew">
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">Vorrangig bei Mietwohn-, gemischt genutzten und Geschäftsgrundstücken. Voraussetzung: tatsächliche oder ortsübliche Miete.</p>
+      <div class="grid-2">
+        <label class="field">
+          <span class="field-label">Monatlicher Gesamtrohertrag in € <span style="text-transform:none;letter-spacing:0;">(Nettokaltmiete inkl. Stellplätze)</span></span>
+          <input type="text" id="ewMiete" placeholder="z. B. 1.200" oninput="formatDE(this)" onblur="formatDE(this)">
+        </label>
+        <label class="field">
+          <span class="field-label">Anzahl Wohn-/sonst. Einheiten</span>
+          <input type="number" id="ewEinheiten" min="0" placeholder="autom. Schätzung wenn leer">
+          <span class="field-hint">Wird sonst aus Fläche geschätzt (94 m²/Einh.)</span>
+        </label>
       </div>
-      <hr class="divider" id="vgw-hr" style="display:none;">
-      <div id="ewv-section">
-        <button class="sec-toggle" onclick="toggleSec('ewv')">Ertragswertverfahren</button>
-        <div class="collapsible" id="ewv">
-          <div class="grid2">
-            <label><span class="lbl">Miete bekannt?</span>
-              <select id="ewv_vorhanden" onchange="updateVisibility()"><option value="nein">Nein</option><option value="ja">Ja</option></select>
-            </label>
-          </div>
-          <div id="ewv-felder" style="display:none;">
-            <div class="grid2">
-              <label><span class="lbl">Monatlicher Rohertrag Nettokaltmiete (€)</span>
-                <input type="text" id="ewv_miete" placeholder="0,00" onblur="fmtInput(this)" onfocus="rawInput(this)">
-                <span class="hint">Inkl. Garagen/TG; ohne Betriebskosten</span>
-              </label>
-              <label><span class="lbl">Anzahl Wohneinheiten (optional)</span>
-                <input type="text" id="ewv_we" placeholder="leer = Schätzung" onblur="fmtInput(this)" onfocus="rawInput(this)">
-              </label>
-              <label><span class="lbl">Liegenschaftszinssatz GA (%, optional)</span>
-                <input type="text" id="ewv_zinssatz" placeholder="leer = typisiert" onblur="fmtInputPct(this)" onfocus="rawInput(this)">
-                <span class="hint">Leer = typisiert §§ 188, 193 BewG</span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-      <hr class="divider">
-      <button class="sec-toggle" onclick="toggleSec('swv')">Sachwertverfahren</button>
-      <div class="collapsible" id="swv">
-        <div class="grid2">
-          <label><span class="lbl">Regionalfaktor (Standard: 1,0000)</span>
-            <input type="text" id="swv_regional" value="1,0000" onblur="fmtInput4(this)" onfocus="rawInput(this)">
-          </label>
-          <label><span class="lbl">Sachwertfaktor GA (Standard: 1,0000)</span>
-            <input type="text" id="swv_markt" value="1,0000" onblur="fmtInput4(this)" onfocus="rawInput(this)">
-          </label>
-        </div>
-      </div>
+      <label class="field">
+        <span class="field-label">Liegenschaftszinssatz in % <span style="text-transform:none;letter-spacing:0;">(optional)</span></span>
+        <input type="text" id="ewZins" placeholder="leer = typisierter Zins (§ 188 BewG)" oninput="formatDE(this)" onblur="formatDE(this)">
+        <span class="field-hint">Falls vom Gutachterausschuss vorhanden</span>
+      </label>
     </div>
 
-    <button class="btn" onclick="berechne()">Berechnen</button>
-
-    <div class="result-box" id="result-box">
-      <div class="card-title">Ergebnis der Kaufpreisaufteilung</div>
-      <div id="result-methode" class="method-badge"></div>
-      <div id="result-warn"></div>
-      <div class="res2">
-        <div>
-          <div class="result-label">Grund und Boden</div>
-          <div class="result-big" id="res-boden">—</div>
-          <div class="result-sub" id="res-boden-pct"></div>
-          <div class="split-bar"><div class="split-fill" id="bar-boden"></div></div>
-        </div>
-        <div>
-          <div class="result-label">Gebäude (BMG AfA)</div>
-          <div class="result-big" id="res-gebaeude">—</div>
-          <div class="result-sub" id="res-gebaeude-pct"></div>
-          <div class="split-bar"><div class="split-fill" id="bar-gebaeude" style="background:var(--text-muted)"></div></div>
-        </div>
-      </div>
-      <hr class="divider">
-      <div id="result-detail"></div>
-      <div style="margin-top:16px;padding:10px 14px;background:var(--accent-dim);border:1px solid var(--accent);font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);">
-        ✓ Prozentwerte wurden automatisch in die AK/HK-Aufteilung übernommen
+    <!-- Sachwertverfahren -->
+    <div class="method-section active" id="section-sw">
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">Auffangverfahren wenn weder Vergleichs- noch Ertragswertverfahren möglich.</p>
+      <div class="grid-2">
+        <label class="field">
+          <span class="field-label">Regionalfaktor</span>
+          <input type="text" id="swRegional" placeholder="1,0000" oninput="formatDE(this)" onblur="formatDE(this)">
+          <span class="field-hint">Standard: 1,0</span>
+        </label>
+        <label class="field">
+          <span class="field-label">Sachwertfaktor</span>
+          <input type="text" id="swMarkt" placeholder="1,0000" oninput="formatDE(this)" onblur="formatDE(this)">
+          <span class="field-hint">Marktanpassungsfaktor (Standard: 1,0)</span>
+        </label>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════ TAB FIKTIV ══════════════════ -->
-  <div class="tab-pane" id="tab-fiktiv">
-    <div class="card" style="margin-top:20px;">
-      <div class="card-title">Fiktives Baujahr nach Modernisierungen</div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Bei Modernisierungsmaßnahmen in den letzten 20 Jahren vor Anschaffung kann ein fiktives Baujahr angesetzt werden.</p>
-      <div class="grid2">
-        <label><span class="lbl">Ursprüngliches Baujahr</span>
-          <input type="text" id="fik_urspr" placeholder="z. B. 1960" onblur="fiktivCalc()" onfocus="rawInput(this)">
-        </label>
-        <label><span class="lbl">Jahr der Anschaffung</span>
-          <input type="text" id="fik_kauf" placeholder="z. B. 2025" onblur="fiktivCalc()" onfocus="rawInput(this)">
-        </label>
-      </div>
-      <hr class="divider">
-      <div class="card-title" style="margin-bottom:12px;">Modernisierungsmaßnahmen</div>
-      <p style="font-size:11px;color:var(--text-muted);margin-bottom:16px;font-family:'IBM Plex Mono',monospace;">Nur letzte 20 Jahre. Älter als 10 Jahre: max. "teilweise".</p>
-      <div id="mod-rows"></div>
-      <button class="btn btn-sec" onclick="addMod()" style="width:auto;padding:10px 20px;margin-bottom:16px;">+ Modernisierungsmaßnahme</button>
-      <div id="fiktiv-result" style="display:none;">
-        <hr class="divider">
-        <div class="grid2">
-          <div>
-            <div class="result-label">Fiktives Baujahr</div>
-            <div style="font-family:'Playfair Display',serif;font-size:36px;color:var(--accent);margin:6px 0;" id="fik-ergebnis">—</div>
-            <div class="hint" id="fik-hinweis"></div>
-          </div>
-          <div>
-            <div class="result-label">Modernisierungspunkte</div>
-            <div style="font-family:'Playfair Display',serif;font-size:36px;color:var(--text);margin:6px 0;" id="fik-punkte">0</div>
-            <div class="hint">Max. 20 Punkte</div>
-          </div>
-        </div>
-        <div id="fik-detail" style="margin-top:16px;"></div>
-      </div>
+  <button class="primary" onclick="berechnen()">Kaufpreisaufteilung berechnen</button>
+
+  <!-- Ergebnis -->
+  <div class="result" id="result">
+    <div class="result-title">Ergebnis der Kaufpreisaufteilung</div>
+    <div class="result-bar" id="resultBar">
+      <div class="result-bar-grund" id="barGrund">Grund &amp; Boden</div>
+      <div class="result-bar-gebaeude" id="barGebaeude">Gebäude</div>
+    </div>
+    <div class="result-row">
+      <span class="label">Grund &amp; Boden</span>
+      <span class="pct" id="pctGrund">—</span>
+      <span class="val" id="valGrund">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Gebäude</span>
+      <span class="pct" id="pctGebaeude">—</span>
+      <span class="val" id="valGebaeude">—</span>
+    </div>
+    <div class="result-row total">
+      <span class="label">Kaufpreis gesamt</span>
+      <span class="pct">100 %</span>
+      <span class="val" id="valGesamt">—</span>
+    </div>
+    <details class="calculation-details" id="calcDetails">
+      <summary>Berechnungsweg anzeigen</summary>
+      <div id="calcContent"></div>
+    </details>
+    <div id="warnings"></div>
+    <div class="actions">
+      <button class="secondary" onclick="window.print()">Drucken / Als PDF speichern</button>
+      <button class="secondary" onclick="resetForm()">Neue Berechnung</button>
     </div>
   </div>
 
-  <p class="disclaimer">Alle Berechnungen basieren auf der BMF-Arbeitshilfe zur Kaufpreisaufteilung (Fassung Januar 2025/2026) i.V.m. ImmoWertV, §§ 7, 21 EStG. Die Kaufpreisaufteilung stellt eine qualifizierte Schätzung dar und ist sachverständig widerlegbar (BFH, Urt. v. 10.10.2000, IX R 86/97). Kein Ersatz für individuelle Steuer- oder Rechtsberatung · Alle Angaben ohne Gewähr</p>
+  <p class="disclaimer">Alle Berechnungen sind Näherungswerte auf Basis der BMF-Arbeitshilfe zur Kaufpreisaufteilung (Stand März 2026) und der Immobilienwertermittlungsverordnung (ImmoWertV). Es handelt sich um eine qualifizierte Schätzung, die sachverständig begründet widerlegbar ist. Individuelle Faktoren bleiben unberücksichtigt. Kein Ersatz für individuelle Steuer- oder Rechtsberatung · Alle Angaben ohne Gewähr</p>
+
 </div>
-<footer>Robin Glowania</footer>
+
+<footer>&copy; Robin Glowania &middot; Zuletzt aktualisiert: 30.04.2026</footer>
 
 <script>
-/* ─── THEME ─── */
-function setTheme(t){if(t==='system')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('g-theme',t);}catch(e){}document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));var btn=document.getElementById('btn-'+t);if(btn)btn.classList.add('active');}
-(function(){var s='system';try{s=localStorage.getItem('g-theme')||'system';}catch(e){}setTheme(s);})();
-
-/* ─── FORMAT ─── */
-function parseDe(s){if(s===null||s===undefined||s==='')return 0;return parseFloat(String(s).replace(/\./g,'').replace(',','.'))||0;}
-function fmtEur(n){return n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtInt(n){return Math.round(n).toLocaleString('de-DE');}
-function fmtInput(el){var v=parseDe(el.value);if(el.value.trim())el.value=fmtEur(v);}
-function fmtInput4(el){var v=parseDe(el.value);if(el.value.trim())el.value=v.toLocaleString('de-DE',{minimumFractionDigits:4,maximumFractionDigits:4});}
-function fmtInputPct(el){var v=parseDe(el.value);if(el.value.trim())el.value=v.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function rawInput(el){if(!el.readOnly)el.value=String(el.value).replace(/\./g,'').replace(',','.');}
-function parseDatum(el){var m=el.value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)el.value=m[3]+'.'+m[2]+'.'+m[1];}
-function getKaufJahr(){var m=document.getElementById('kaufdatum').value.match(/(\d{4})/);return m?parseInt(m[1]):new Date().getFullYear();}
-
-/* ─── TABS ─── */
-function showTab(id,btn){document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');if(btn)btn.classList.add('active');}
-
-/* ─── COLLAPSIBLE ─── */
-function toggleSec(id){var el=document.getElementById(id);var btn=el.previousElementSibling;el.classList.toggle('open');btn.classList.toggle('open');if(id==='vgw')document.getElementById('vgw-hr').style.display=el.classList.contains('open')?'block':'none';}
-
-/* ─── VISIBILITY ─── */
-var EFH_TYPES=['efh_gen','1.01','1.02','1.03','1.11','1.12','1.13','1.21','1.22','1.23','1.31','1.32','1.33','1.011','1.021','1.031','1.111','1.121','1.131','1.211','1.221','1.231','1.311','1.321','1.331','2.01','2.02','2.03','2.11','2.12','2.13','2.21','2.22','2.23','2.31','2.32','2.33','3.01','3.02','3.03','3.11','3.12','3.13','3.21','3.22','3.23','3.31','3.32','3.33','we'];
-function updateVisibility(){
-  var gs=document.getElementById('grundstuecksart').value;
-  var isWE=['we','mfh_te','gem_w_te','gem_g_te','gesc_te','buero_te'].includes(gs);
-  document.getElementById('mea-row').style.display=isWE?'block':'none';
-  document.getElementById('vgw-section').style.display=EFH_TYPES.includes(gs)?'block':'none';
-  var vja=document.getElementById('vgw_vorhanden').value==='ja';
-  document.getElementById('vgw-detail').style.display=vja?'block':'none';
-  document.getElementById('vgw-felder').style.display=vja?'block':'none';
-  document.getElementById('ewv-felder').style.display=document.getElementById('ewv_vorhanden').value==='ja'?'block':'none';
+function setTheme(t){
+  if(t==='system'){document.documentElement.removeAttribute('data-theme');}
+  else{document.documentElement.setAttribute('data-theme',t);}
+  try{localStorage.setItem('g-theme',t);}catch(e){}
+  document.querySelectorAll('.theme-btn').forEach(function(b){b.classList.remove('active');});
+  var btn=document.getElementById('btn-'+t);if(btn)btn.classList.add('active');
 }
-updateVisibility();
+(function(){var saved='system';try{saved=localStorage.getItem('g-theme')||'system';}catch(e){}setTheme(saved);})();
 
-/* ─── NHK / BPI / BWK / LZ TABELLEN ─── */
-var NHK={'efh_gen':[735.77,845.44,1019.08,2.0423,80],'1.01':[725,835,1005,2.3,80],'1.02':[605,695,840,3.8,80],'1.03':[785,900,1085,2.6,80],'1.11':[725,835,1005,1.9,80],'1.12':[635,730,880,2.8,80],'1.13':[740,850,1025,2.1,80],'1.21':[875,1005,1215,1.6,80],'1.22':[650,745,900,2.6,80],'1.23':[1025,1180,1420,1.4,80],'1.31':[800,920,1105,1.5,80],'1.32':[690,790,955,2.1,80],'1.33':[870,1000,1205,1.4,80],'1.011':[761,877,1055,2.3,80],'1.021':[635,730,882,3.8,80],'1.031':[824,945,1139,2.6,80],'1.111':[761,877,1055,1.9,80],'1.121':[667,767,924,2.8,80],'1.131':[777,893,1076,2.1,80],'1.211':[919,1055,1276,1.6,80],'1.221':[683,782,945,2.6,80],'1.231':[1076,1239,1491,1.4,80],'1.311':[840,966,1160,1.5,80],'1.321':[725,830,1003,2.1,80],'1.331':[914,1050,1265,1.4,80],'2.01':[685,785,945,2.0,80],'2.02':[570,655,790,3.9,80],'2.03':[735,845,1020,2.6,80],'2.11':[685,785,945,1.8,80],'2.12':[595,685,825,2.6,80],'2.13':[695,800,965,1.9,80],'2.21':[825,945,1140,1.3,80],'2.22':[610,700,845,2.6,80],'2.23':[965,1105,1335,1.4,80],'2.31':[750,865,1040,1.4,80],'2.32':[645,745,895,2.0,80],'2.33':[820,940,1135,1.3,80],'3.01':[640,735,885,2.0,80],'3.02':[535,615,740,3.9,80],'3.03':[690,795,955,2.6,80],'3.11':[640,735,885,1.8,80],'3.12':[560,640,775,2.6,80],'3.13':[650,750,905,1.9,80],'3.21':[770,885,1065,1.3,80],'3.22':[570,655,790,2.6,80],'3.23':[900,1035,1250,1.4,80],'3.31':[705,810,975,1.4,80],'3.32':[605,695,840,2.0,80],'3.33':[765,880,1060,1.3,80],'mfh':[718,825,985,1.9,80],'mfh_te':[718,825,985,1.9,80],'we':[718,825,985,1.9,80],'gem_w':[748,860,1085,2.0,80],'gem_w_te':[748,860,1085,2.0,80],'gem_g':[748,860,1085,2.0,80],'gem_g_te':[748,860,1085,2.0,80],'gesc':[809,930,1520,1.5,60],'gesc_te':[809,930,1520,1.5,60],'buero':[1023,1175,1840,1.5,60],'buero_te':[1023,1175,1840,1.5,60]};
-var BPIW={2025:189.1,2024:183.3,2023:177.9,2022:164.0,2021:141.0,2020:129.2,2019:127.2,2018:122.0,2017:116.8,2016:113.4,2015:111.1,2014:109.4,2013:107.5,2012:105.4,2011:102.8,2010:100.0,2009:99.0,2008:98.2,2007:95.4,2006:89.5,2005:87.8,2004:87.0,2003:85.9,2002:85.9,2001:85.9,2000:85.9};
-var BPING={2025:193.7,2024:187.2,2023:181.3,2022:166.9,2021:142.0,2020:130.1,2019:128.1,2018:122.7,2017:117.4,2016:113.9,2015:111.4,2014:109.6};
-function getBPI(j,gs){var isG=['gesc','gesc_te','buero','buero_te'].includes(gs);var idx=isG?BPING:BPIW;if(idx[j])return idx[j];var keys=Object.keys(idx).map(Number).sort((a,b)=>b-a);for(var k of keys)if(k<=j)return idx[k];return idx[keys[keys.length-1]];}
-var LZMAP={efh_gen:2.5,we:3.5,mfh:3.5,mfh_te:3.5,gem_w:4.5,gem_w_te:4.5,gem_g:4.5,gem_g_te:4.5,gesc:6,gesc_te:6,buero:6,buero_te:6};
-EFH_TYPES.filter(k=>k!=='we').forEach(k=>LZMAP[k]=2.5);
-function getGND(gs){return NHK[gs]?NHK[gs][4]:80;}
-function bwf(z,n){var r=z/100;return r===0?n:(1-Math.pow(1+r,-n))/r;}
-var BWK={2001:{vw:230,ve:275,vg:30,ih:9.0,ig:68},2002:{vw:230,ve:275,vg:30,ih:9.0,ig:68},2003:{vw:233,ve:278,vg:30,ih:9.1,ig:69},2004:{vw:236,ve:282,vg:31,ih:9.2,ig:70},2005:{vw:240,ve:287,vg:31,ih:9.4,ig:71},2006:{vw:244,ve:292,vg:32,ih:9.6,ig:72},2007:{vw:247,ve:295,vg:32,ih:9.7,ig:73},2008:{vw:254,ve:304,vg:33,ih:9.9,ig:75},2009:{vw:260,ve:311,vg:34,ih:10.2,ig:77},2010:{vw:260,ve:311,vg:34,ih:10.2,ig:77},2011:{vw:263,ve:315,vg:34,ih:10.3,ig:78},2012:{vw:269,ve:322,vg:35,ih:10.5,ig:80},2013:{vw:275,ve:329,vg:36,ih:10.8,ig:81},2014:{vw:278,ve:333,vg:36,ih:10.9,ig:82},2015:{vw:280,ve:335,vg:37,ih:11.0,ig:83},2016:{vw:283,ve:338,vg:37,ih:11.1,ig:84},2017:{vw:285,ve:341,vg:37,ih:11.2,ig:84},2018:{vw:289,ve:345,vg:38,ih:11.3,ig:85},2019:{vw:296,ve:354,vg:39,ih:11.6,ig:87},2020:{vw:299,ve:358,vg:39,ih:11.7,ig:88},2021:{vw:298,ve:357,vg:39,ih:11.7,ig:88},2022:{vw:312,ve:373,vg:41,ih:12.2,ig:92},2023:{vw:344,ve:412,vg:45,ih:13.5,ig:102},2024:{vw:351,ve:420,vg:46,ih:13.8,ig:104},2025:{vw:359,ve:429,vg:47,ih:14.0,ig:106},2026:{vw:367,ve:439,vg:48,ih:14.4,ig:108}};
-function getBWK(j){if(BWK[j])return BWK[j];var keys=Object.keys(BWK).map(Number).sort((a,b)=>b-a);for(var k of keys)if(k<=j)return BWK[k];return BWK[2026];}
+// ───────── Datenbasis ─────────
+// NHK 2010 BGF-Kostenkennwerte: [Stufe2, Stufe3, Stufe4, BGF/WF-Faktor]
+const NHK = {
+  '1.01':[725,835,1005,2.3],'1.02':[605,695,840,3.8],'1.03':[785,900,1085,2.6],
+  '1.11':[725,835,1005,1.9],'1.12':[635,730,880,2.8],'1.13':[740,850,1025,2.1],
+  '1.21':[875,1005,1215,1.6],'1.22':[650,745,900,2.6],'1.23':[1025,1180,1420,1.4],
+  '1.31':[800,920,1105,1.5],'1.32':[690,790,955,2.1],'1.33':[870,1000,1205,1.4],
+  '2.01':[685,785,945,2.0],'2.11':[685,785,945,1.8],
+  '3.01':[640,735,885,2.0],'3.11':[640,735,885,1.8],
+  'MFH':[718,825,985,1.9],
+  'WE':[718,825,985,1.9],
+  'MIX':[748,860,1085,2.0],
+  'GH':[809,930,1520,1.5],
+  'BG':[1023,1175,1840,1.5]
+};
 
-/* ─── GLOBALER STORE ─── */
-var G={};
+// Baupreisindex (2010=100), Wohngebäude / Nichtwohngebäude
+const BAUINDEX = {
+  2010:[100,100],2011:[102.8,103],2012:[105.4,105.5],2013:[107.5,107.6],
+  2014:[109.4,109.6],2015:[111.1,111.4],2016:[113.4,113.9],2017:[116.8,117.4],
+  2018:[122,122.7],2019:[127.2,128.1],2020:[129.2,130.1],2021:[141,142],
+  2022:[164,166.9],2023:[177.9,181.3],2024:[183.3,187.2],
+  2025:[189.1,193.7],2026:[189.1,193.7],2027:[189.1,193.7],2028:[189.1,193.7]
+};
 
-/* ─── AK/HK ─── */
-var nkCnt=0;
-function addNK(){
-  nkCnt++;var id='nk_'+nkCnt;
-  var d=document.createElement('div');d.className='ak-card';d.id=id;
-  d.innerHTML=`<div class="ak-grid"><label style="margin-bottom:0;"><span class="lbl">Bezeichnung</span><input type="text" id="${id}_bez" placeholder="z. B. Grunderwerbsteuer"></label><button class="ak-remove" onclick="document.getElementById('${id}').remove();akCalc()">✕</button></div><label style="margin-top:10px;margin-bottom:0;"><span class="lbl">Betrag (€)</span><input type="text" id="${id}_val" placeholder="0,00" onblur="fmtInput(this);akCalc()" onfocus="rawInput(this)"></label>`;
-  document.getElementById('ak-nk-rows').appendChild(d);
+// Gesamtnutzungsdauer (ImmoWertV Anlage 1)
+const GND = {
+  '1.01':80,'1.02':80,'1.03':80,'1.11':80,'1.12':80,'1.13':80,
+  '1.21':80,'1.22':80,'1.23':80,'1.31':80,'1.32':80,'1.33':80,
+  '2.01':80,'2.11':80,'3.01':80,'3.11':80,
+  'MFH':80,'WE':80,'MIX':80,'GH':70,'BG':70
+};
+
+// Typisierter Liegenschaftszins (§ 188 BewG, ab 2023)
+// Schwellen nach Bodenrichtwert (€/m²): bis 200, 200-400, 400-1000, >1000
+const LIEGENSCHAFTSZINS_TYPISIERT = {
+  'MFH':[5,4.5,4,3.5],'WE':[5,4.5,4,3.5],
+  '1.01':[3.5,3.5,3.5,3.5],'EFH':[3.5,3.5,3.5,3.5],
+  'MIX':[5.5,5,4.5,4],'GH':[6.5,6,5.5,5],'BG':[6.5,6,5.5,5]
+};
+
+// Bewirtschaftungskosten — Verwaltung pro Einheit (Stand 2025)
+const BWK = {
+  verwaltungWohnung:359,
+  verwaltungETW:429,
+  verwaltungGarage:47,
+  instandhaltungWfm2:14.00,
+  instandhaltungGarage:106,
+  mietausfallWohnen:0.02,
+  mietausfallGewerbe:0.04,
+  verwaltungGewerbeProz:0.03
+};
+
+// ───────── Helpers ─────────
+function parseDE(v){if(!v)return 0;if(typeof v==='number')return v;return parseFloat(String(v).replace(/\./g,'').replace(',','.'))||0;}
+function fmtDE(n,dec){if(dec===undefined)dec=0;if(!isFinite(n))return '—';return n.toLocaleString('de-DE',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
+function fmtEUR(n){return fmtDE(Math.round(n))+' €';}
+function fmtPct(n){return fmtDE(n,2)+' %';}
+
+function formatDE(input){
+  let raw=input.value.replace(/[^0-9,]/g,'');
+  if(!raw){input.value='';return;}
+  let parts=raw.split(',');
+  let intPart=parts[0].replace(/^0+(?=\d)/,'')||'0';
+  intPart=intPart.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  if(parts.length>1){input.value=intPart+','+parts[1].slice(0,4);}
+  else{input.value=intPart;}
 }
-function akCalc(){
-  var sum=parseDe(document.getElementById('ak_kaufpreis').value)||0;
-  document.querySelectorAll('[id^=nk_][id$=_val]').forEach(el=>{sum+=parseDe(el.value)||0;});
-  G.akSum=sum;
-  document.getElementById('ak-summe').textContent=fmtEur(sum)+' €';
-  document.getElementById('kaufpreis').value=sum>0?fmtEur(sum):'';
-  akAufteilung();
-}
-function akAufteilung(){
-  var sum=G.akSum||0;
-  var pct=parseDe(document.getElementById('ak_geb_pct').value)||0;
-  if(!pct||!sum){document.getElementById('ak-result').style.display='none';document.getElementById('ak-export-row').style.display='none';return;}
-  var geb=sum*pct/100,boden=sum-geb;
-  document.getElementById('ak-res-boden').textContent=fmtEur(boden)+' €';
-  document.getElementById('ak-res-geb').textContent=fmtEur(geb)+' €';
-  document.getElementById('ak-result').style.display='grid';
-  document.getElementById('ak-export-row').style.display='block';
-  G.akGeb=geb;G.akBoden=boden;
+
+function getJahr(){
+  let d=document.getElementById('kaufdatum').value;
+  if(!d)return new Date().getFullYear();
+  return parseInt(d.split('-')[0]);
 }
 
-/* ─── KPA BERECHNUNG ─── */
-function berechne(){
-  var gs=document.getElementById('grundstuecksart').value;
-  var kaufpreis=parseDe(document.getElementById('kaufpreis').value);
-  var baujahr=parseInt(document.getElementById('baujahr').value)||0;
-  var wfl=parseDe(document.getElementById('wohnflaeche').value);
-  var garagen=parseDe(document.getElementById('garagen').value)||0;
-  var tg=parseDe(document.getElementById('tiefgaragen').value)||0;
-  var f1=parseDe(document.getElementById('flaeche1').value)||0;
-  var brw1=parseDe(document.getElementById('brw1').value)||0;
-  var f2=parseDe(document.getElementById('flaeche2').value)||0;
-  var brw2=parseDe(document.getElementById('brw2').value)||0;
-  var kj=getKaufJahr();
-  var isWE=['we','mfh_te','gem_w_te','gem_g_te','gesc_te','buero_te'].includes(gs);
-  var mea_z=parseDe(document.getElementById('mea_z').value)||1,mea_n=parseDe(document.getElementById('mea_n').value)||1;
-  var mea=isWE&&mea_n>0?mea_z/mea_n:1;
-  if(!kaufpreis||!baujahr||!wfl||(!f1&&!f2)){alert('Pflichtfelder: Kaufpreis, Baujahr, Wohnfläche, Grundstücksgröße + BRW');return;}
-  var bodenwert=f1*brw1*mea+f2*brw2*mea;
-  var methode='',geb=0,rows=[],warns=[];
+function gebaeudeStandardstufe(baujahr){
+  if(baujahr<1995)return 0; // Stufe 2
+  if(baujahr<=2004)return 1; // Stufe 3
+  return 2; // Stufe 4
+}
 
-  /* VGW */
-  if(EFH_TYPES.includes(gs)&&document.getElementById('vgw_vorhanden').value==='ja'){
-    var vf=parseDe(document.getElementById('vgw_faktor').value);
-    if(vf>0){methode='Vergleichswertverfahren';var vgw=vf*wfl*mea+parseDe(document.getElementById('vgw_garage').value)*garagen+parseDe(document.getElementById('vgw_tiefgarage').value)*tg;geb=Math.max(0,vgw-bodenwert);rows=[['Bodenwert',fmtEur(bodenwert)+' €'],['Vergleichsfaktor obj.-spez.',fmtEur(vf)+' €/m²'],['Vergleichswert',fmtEur(vgw)+' €'],['Gebäudewert (Vergleichswert − Bodenwert)',fmtEur(geb)+' €']];if(geb<=0)warns.push('Bodenwert übersteigt Vergleichswert. Eingaben prüfen.');}
+function isWohngebaeude(){
+  let g=document.getElementById('gebaeudeart').value;
+  return !['GH','BG'].includes(g);
+}
+
+function isWohnungseigentum(){
+  return document.getElementById('gebaeudeart').value==='WE';
+}
+
+function onGebaeudeartChange(){
+  let g=document.getElementById('gebaeudeart').value;
+  document.getElementById('meaSection').style.display=(g==='WE')?'grid':'none';
+}
+
+// Barwertfaktor (Rentenbarwertfaktor)
+function barwertfaktor(zins,jahre){
+  let i=zins/100;
+  if(i===0)return jahre;
+  return (Math.pow(1+i,jahre)-1)/(i*Math.pow(1+i,jahre));
+}
+
+// ───────── Verfahren ─────────
+function selectMethod(m){
+  document.querySelectorAll('.method-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.method-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+m).classList.add('active');
+  document.getElementById('section-'+m).classList.add('active');
+  window.currentMethod=m;
+}
+window.currentMethod='sw';
+
+function berechneBodenwert(){
+  let f1=parseDE(document.getElementById('grundstuecksgroesse').value);
+  let brw=parseDE(document.getElementById('bodenrichtwert').value);
+  let f2=parseDE(document.getElementById('flaeche2').value);
+  let w2=parseDE(document.getElementById('wert2').value);
+  let bodenwert=f1*brw + f2*w2;
+  // Miteigentumsanteil bei Wohnungseigentum
+  if(isWohnungseigentum()){
+    let z=parseFloat(document.getElementById('meaZaehler').value);
+    let n=parseFloat(document.getElementById('meaNenner').value);
+    if(z>0&&n>0){bodenwert=bodenwert*z/n;}
+  }
+  return {bodenwert,f1,brw,f2,w2,bodenwertOhneTeilfl:f1*brw,bodenwertTeilfl:f2*w2};
+}
+
+// Verfahren 1 — Vergleichswertverfahren
+function vergleichswert(){
+  let faktor=parseDE(document.getElementById('vwFaktor').value);
+  let flaeche=parseDE(document.getElementById('flaeche').value);
+  let garagen=parseInt(document.getElementById('garagen').value)||0;
+  let tiefgaragen=parseInt(document.getElementById('tiefgaragen').value)||0;
+  let faktorG=parseDE(document.getElementById('vwGarage').value);
+  let faktorT=parseDE(document.getElementById('vwTiefgarage').value);
+  let vergleichswert=faktor*flaeche + garagen*faktorG + tiefgaragen*faktorT;
+  return {vergleichswert,faktor,flaeche,garagen,tiefgaragen,faktorG,faktorT};
+}
+
+// Verfahren 2 — Ertragswertverfahren
+function ertragswert(){
+  let miete=parseDE(document.getElementById('ewMiete').value);
+  let einheiten=parseInt(document.getElementById('ewEinheiten').value);
+  let flaeche=parseDE(document.getElementById('flaeche').value);
+  let garagen=parseInt(document.getElementById('garagen').value)||0;
+  let baujahr=parseInt(document.getElementById('baujahr').value);
+  let jahr=getJahr();
+  let zinsManuell=parseDE(document.getElementById('ewZins').value);
+  let g=document.getElementById('gebaeudeart').value;
+  let bw=berechneBodenwert();
+
+  // Einheiten-Schätzung
+  if(!einheiten||einheiten<=0){einheiten=Math.max(1,Math.round(flaeche/94));}
+
+  // Jahresrohertrag
+  let rohertrag=miete*12;
+
+  // Bewirtschaftungskosten
+  let bwk;
+  let isWohn=['MFH','WE','1.01','1.02','1.03','1.11','1.12','1.13','1.21','1.22','1.23','1.31','1.32','1.33','2.01','2.11','3.01','3.11'].includes(g);
+  let isMixed=g==='MIX';
+  let isGewerbe=['GH','BG'].includes(g);
+
+  if(isGewerbe){
+    let verwaltung=rohertrag*BWK.verwaltungGewerbeProz;
+    let instandhaltung=flaeche*BWK.instandhaltungWfm2;
+    let mietausfall=rohertrag*BWK.mietausfallGewerbe;
+    bwk={verwaltung,instandhaltung,mietausfall,gesamt:verwaltung+instandhaltung+mietausfall};
+  } else if(isMixed){
+    let verwaltung=rohertrag*BWK.verwaltungGewerbeProz;
+    let instandhaltung=flaeche*BWK.instandhaltungWfm2;
+    let mietausfall=rohertrag*BWK.mietausfallGewerbe;
+    bwk={verwaltung,instandhaltung,mietausfall,gesamt:verwaltung+instandhaltung+mietausfall};
+  } else {
+    let verwProEinheit=isWohnungseigentum()?BWK.verwaltungETW:BWK.verwaltungWohnung;
+    let verwaltung=einheiten*verwProEinheit + garagen*BWK.verwaltungGarage;
+    let instandhaltung=flaeche*BWK.instandhaltungWfm2 + garagen*BWK.instandhaltungGarage;
+    let mietausfall=rohertrag*BWK.mietausfallWohnen;
+    bwk={verwaltung,instandhaltung,mietausfall,gesamt:verwaltung+instandhaltung+mietausfall};
   }
 
-  /* EWV */
-  if(!methode&&document.getElementById('ewv_vorhanden').value==='ja'){
-    var mm=parseDe(document.getElementById('ewv_miete').value);
-    if(mm>0){
-      methode='Ertragswertverfahren';
-      var bwk=getBWK(kj),roh=mm*12;
-      var we=parseDe(document.getElementById('ewv_we').value)||Math.max(1,Math.round(wfl/94));
-      var lz_in=parseDe(document.getElementById('ewv_zinssatz').value)||0;
-      var isETW=gs==='we'||gs==='mfh_te';
-      var isGew=['gesc','gesc_te','buero','buero_te'].includes(gs);
-      var isMix=['gem_w','gem_w_te','gem_g','gem_g_te'].includes(gs);
-      var bk;
-      if(isGew||isMix)bk=roh*0.07+bwk.ih*wfl+bwk.ig*(garagen+tg);
-      else if(isETW)bk=bwk.ve*we+bwk.vg*(garagen+tg)+bwk.ih*wfl+bwk.ig*(garagen+tg)+roh*0.02;
-      else bk=bwk.vw*we+bwk.vg*(garagen+tg)+bwk.ih*wfl+bwk.ig*(garagen+tg)+roh*0.02;
-      var rein=roh-bk,lz=lz_in>0?lz_in:(LZMAP[gs]||3.5);
-      var gnd=getGND(gs),alt=kj-baujahr,rnd=Math.max(Math.round(gnd*0.3),gnd-alt);
-      var bvz=f1*brw1*mea*(lz/100),grein=rein-bvz,bf=bwf(lz,rnd),eg=grein*bf;
-      geb=Math.max(0,eg);
-      if(bodenwert>(bodenwert+geb)*0.9)warns.push('Ertragswert nicht plausibel – Missverhältnis Bodenwert/Ertragswert. Ggf. Liquidationsobjekt.');
-      rows=[['Bodenwert',fmtEur(bodenwert)+' €'],['Jährlicher Rohertrag',fmtEur(roh)+' €'],['Bewirtschaftungskosten',fmtEur(bk)+' €'],['Jährlicher Reinertrag',fmtEur(rein)+' €'],['Liegenschaftszinssatz'+(lz_in>0?' (GA)':' (typ.)'),lz.toLocaleString('de-DE',{minimumFractionDigits:1})+' %'],['Bodenwertverzinsung',fmtEur(bvz)+' €'],['Reinertragsanteil Gebäude',fmtEur(grein)+' €'],['GND / Alter / RND',gnd+'J / '+alt+'J / '+rnd+'J'],['Barwertfaktor (z='+lz+'%, n='+rnd+'J)',bf.toFixed(4)],['Ertragswert Gebäude',fmtEur(eg)+' €']];
-    }
+  let reinertrag=rohertrag-bwk.gesamt;
+
+  // Liegenschaftszins ermitteln
+  let zins;
+  if(zinsManuell>0){zins=zinsManuell;}
+  else{
+    let brw=bw.brw;
+    let key=g;
+    if(['1.01','1.02','1.03','1.11','1.12','1.13','1.21','1.22','1.23','1.31','1.32','1.33','2.01','2.11','3.01','3.11'].includes(g)){key='EFH';}
+    let stufen=LIEGENSCHAFTSZINS_TYPISIERT[key]||LIEGENSCHAFTSZINS_TYPISIERT['MFH'];
+    let idx=brw<200?0:brw<400?1:brw<1000?2:3;
+    zins=stufen[idx];
   }
 
-  /* SWV */
-  if(!methode){
-    var nhk=NHK[gs];if(!nhk){alert('Keine NHK-Daten für diese Grundstücksart.');return;}
-    methode='Sachwertverfahren';
-    var reg=parseDe(document.getElementById('swv_regional').value)||1,mkt=parseDe(document.getElementById('swv_markt').value)||1;
-    var stufe=baujahr<1995?0:baujahr<=2004?1:2,bgf=nhk[stufe];
-    var gf=1;if(['we','mfh','mfh_te'].includes(gs)){if(wfl<=35)gf=1.1;else if(wfl>=135)gf=0.85;}
-    bgf*=gf;var bgfw=nhk[3];var wflkw=bgf*bgfw*1.03;
-    var bpi=getBPI(kj,gs);wflkw=wflkw*bpi/100*reg;
-    var gnd=getGND(gs),alt=kj-baujahr,rnd=Math.max(gnd*0.3,gnd-alt),awm=rnd/gnd;
-    var thk=Math.round(wflkw*awm),gs_=thk*wfl;
-    var gar_=Math.round(11349*bpi/100*reg)*garagen,tg_=Math.round(13567*bpi/100*reg)*tg;
-    var vs=(bodenwert+gs_+gar_+tg_)*mkt;
-    geb=Math.max(0,vs-bodenwert);
-    rows=[['Bodenwert',fmtEur(bodenwert)+' €'],['BGF-KKW NHK 2010 (Stufe '+(stufe+2)+(gf!==1?' ×'+gf:'')+')',fmtEur(bgf)+' €/m² BGF'],['WFL-KKW inkl. Außenanlagen 3%',fmtEur(bgf*bgfw*1.03)+' €/m²'],['Baupreisindex '+kj,String(bpi)],['Regionalfaktor',reg.toLocaleString('de-DE',{minimumFractionDigits:4})],['GND / Alter / RND / AWM',gnd+'J / '+alt+'J / '+Math.round(rnd)+'J / '+(awm*100).toFixed(2)+'%'],['THK je m²',fmtInt(thk)+' €/m²'],['Gebäudesachwert',fmtEur(gs_)+' €'],...(gar_>0?[['Garagen-Sachwert',fmtEur(gar_)+' €']]:[]),(tg_>0?[['Tiefgaragen-Sachwert',fmtEur(tg_)+' €']]:[[]]),...[['Vorläufiger Sachwert (vor Marktanpassung)',fmtEur(bodenwert+gs_+gar_+tg_)+' €'],['Sachwertfaktor','× '+mkt.toLocaleString('de-DE',{minimumFractionDigits:4})],['(Marktangepasster) vorläufiger Sachwert',fmtEur(vs)+' €']]];
+  // Bodenwertverzinsung — nur Hauptfläche
+  let bodenwertVerz=bw.bodenwertOhneTeilfl;
+  if(isWohnungseigentum()){
+    let z=parseFloat(document.getElementById('meaZaehler').value);
+    let n=parseFloat(document.getElementById('meaNenner').value);
+    if(z>0&&n>0)bodenwertVerz=bodenwertVerz*z/n;
+  }
+  let bodenverzinsung=bodenwertVerz*zins/100;
+
+  let gebaeudereinertrag=reinertrag-bodenverzinsung;
+
+  // Restnutzungsdauer
+  let gnd=GND[g]||80;
+  let alter=jahr-baujahr;
+  let rnd=Math.max(gnd*0.3, gnd-alter);
+
+  // Kapitalisierung
+  let bwf=barwertfaktor(zins,rnd);
+  let gebaeudeertragswert=gebaeudereinertrag*bwf;
+
+  let ertragswert=bw.bodenwert+gebaeudeertragswert;
+
+  return {miete,rohertrag,einheiten,bwk,reinertrag,zins,bodenverzinsung,
+    gebaeudereinertrag,gnd,alter,rnd,bwf,gebaeudeertragswert,ertragswert,bw};
+}
+
+// Verfahren 3 — Sachwertverfahren
+function sachwert(){
+  let g=document.getElementById('gebaeudeart').value;
+  let baujahr=parseInt(document.getElementById('baujahr').value);
+  let jahr=getJahr();
+  let flaeche=parseDE(document.getElementById('flaeche').value);
+  let regional=parseDE(document.getElementById('swRegional').value)||1;
+  let markt=parseDE(document.getElementById('swMarkt').value)||1;
+  let bw=berechneBodenwert();
+
+  let nhk=NHK[g];
+  if(!nhk){return null;}
+
+  // Standardstufe nach Baujahr
+  let stufe=gebaeudeStandardstufe(baujahr);
+  let bgfKKW=nhk[stufe];
+  let bgfFaktor=nhk[3];
+
+  // BGF→Wfl Umrechnung
+  let wflKKW=bgfKKW*bgfFaktor;
+
+  // Wohnungsgrößenfaktor (nur ETW & Teileigentum MFH)
+  let wflFaktor=1;
+  if(isWohnungseigentum()||g==='WE'){
+    if(flaeche<=35)wflFaktor=1.1;
+    else if(flaeche>=135)wflFaktor=0.85;
+  }
+  let wflKKWadj=Math.round(wflKKW*wflFaktor);
+
+  // Außenanlagen pauschal +3 %
+  let mitAussen=Math.round(wflKKWadj*1.03);
+
+  // Baupreisindex
+  let idx=BAUINDEX[jahr]||BAUINDEX[2026];
+  let bauindex=isWohngebaeude()?idx[0]:idx[1];
+  let mitIndex=mitAussen*bauindex/100;
+
+  // Regionalfaktor
+  let mitRegional=Math.round(mitIndex*regional);
+
+  // Restnutzungsdauer & Alterswertminderung
+  let gnd=GND[g]||80;
+  let alter=jahr-baujahr;
+  let rnd=Math.max(gnd*0.3, gnd-alter);
+  let restwertProz=Math.max(30, (rnd/gnd)*100);
+  let thkProm2=Math.round(mitRegional*restwertProz/100);
+
+  let gebaeudesachwert=thkProm2*flaeche;
+  if(isWohnungseigentum()){
+    let z=parseFloat(document.getElementById('meaZaehler').value);
+    let n=parseFloat(document.getElementById('meaNenner').value);
+    // Bei WE: Wohnfläche bezieht sich bereits auf die Wohnung, Bodenwert wird MEA-anteilig
   }
 
-  var ges=bodenwert+geb,pb=ges>0?bodenwert/ges:0,pg=ges>0?geb/ges:0;
-  var kb=kaufpreis*pb,kg=kaufpreis*pg;
-  G={...G,methode,kaufpreis,bodenwert,gebaeudewert:geb,ges,pct_bod:pb,pct_geb:pg,kp_bod:kb,kp_geb:kg,rows,warns,kj,gs,lage:document.getElementById('lage').value,kaufdatum:document.getElementById('kaufdatum').value,baujahr,wfl};
+  // Vorläufiger Sachwert
+  let vorlaeufig=bw.bodenwert+gebaeudesachwert;
+  let marktangepasst=Math.round(vorlaeufig*markt);
+  let gebaeudeAnteil=marktangepasst-bw.bodenwert;
 
-  var box=document.getElementById('result-box');box.style.display='block';
-  document.getElementById('result-methode').textContent=methode;
-  document.getElementById('res-boden').textContent=fmtEur(kb)+' €';
-  document.getElementById('res-gebaeude').textContent=fmtEur(kg)+' €';
-  document.getElementById('res-boden-pct').textContent='≈ '+(pb*100).toFixed(2)+' %';
-  document.getElementById('res-gebaeude-pct').textContent='≈ '+(pg*100).toFixed(2)+' %';
-  document.getElementById('bar-boden').style.width=(pb*100)+'%';
-  document.getElementById('bar-gebaeude').style.width=(pg*100)+'%';
-  document.getElementById('result-warn').innerHTML=warns.map(w=>`<div class="warn">${w}</div>`).join('');
-  var dh=rows.map(r=>`<div class="info-row"><span class="key">${r[0]}</span><span class="val">${r[1]}</span></div>`).join('');
-  document.getElementById('result-detail').innerHTML=`<div class="card-title" style="margin-bottom:12px;">Rechenweg (${methode})</div>${dh}<hr class="divider"><div class="info-row"><span class="key" style="color:var(--text);">Ermittelte Einzelwerte</span><span class="val"></span></div><div class="info-row"><span class="key">Grund und Boden</span><span class="val">${fmtEur(bodenwert)} € (≈ ${(pb*100).toFixed(2)} %)</span></div><div class="info-row"><span class="key">Wertanteil Gebäude</span><span class="val">${fmtEur(geb)} € (≈ ${(pg*100).toFixed(2)} %)</span></div><div class="info-row"><span class="key">Summe</span><span class="val">${fmtEur(ges)} € (100 %)</span></div><hr class="divider"><div class="info-row"><span class="key" style="color:var(--text);">Kaufpreisanteile (${fmtEur(kaufpreis)} €)</span><span class="val"></span></div><div class="info-row"><span class="key">Grund und Boden</span><span class="val"><b>${fmtEur(kb)} €</b> (≈ ${(pb*100).toFixed(2)} %)</span></div><div class="info-row"><span class="key">Gebäude (BMG AfA)</span><span class="val"><b>${fmtEur(kg)} €</b> (≈ ${(pg*100).toFixed(2)} %)</span></div>`;
-  box.scrollIntoView({behavior:'smooth',block:'start'});
-
-  // AUTO-SYNC → AK/HK
-  document.getElementById('ak_geb_pct').value=(pg*100).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
-  document.getElementById('ak_bod_pct').value=(pb*100).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
-  akAufteilung();
+  return {nhk,stufe,bgfKKW,bgfFaktor,wflKKW,wflFaktor,wflKKWadj,
+    mitAussen,bauindex,mitIndex,regional,mitRegional,gnd,alter,rnd,restwertProz,
+    thkProm2,gebaeudesachwert,vorlaeufig,markt,marktangepasst,gebaeudeAnteil,bw,jahr,baujahr,flaeche};
 }
 
-/* ─── EXCEL EXPORT ─── */
-function exportExcel(){
-  if(!G.kaufpreis){alert('Bitte zuerst berechnen.');return;}
-  var wb=XLSX.utils.book_new();
-  // Blatt 1: KPA
-  var s=[
-    ['KAUFPREISAUFTEILUNG – '+G.methode.toUpperCase(),'',''],
-    ['Lage des Grundstücks',G.lage,''],
-    ['Datum Kaufvertrag',G.kaufdatum,''],
-    ['Grundstücksart',document.getElementById('grundstuecksart').selectedOptions[0].text,''],
-    ['Baujahr (ggf. fiktiv)',G.baujahr,''],
-    ['Wohn-/Nutzfläche (m²)',G.wfl,''],
-    ['','',''],
-    ['Kaufpreisaufteilung','Ermittelte Einzelwerte (€)','Kaufpreisanteile (€)'],
-    ['Grund und Boden',G.bodenwert,G.kp_bod],
-    ['Wertanteil Gebäude / BMG AfA',G.gebaeudewert,G.kp_geb],
-    ['Summe',G.ges,G.kaufpreis],
-    ['','',''],
-    ['Anteil Grund und Boden (%)',(G.pct_bod*100).toFixed(2),''],
-    ['Anteil Gebäude (%)',(G.pct_geb*100).toFixed(2),''],
-    ['','',''],
-    ['RECHENWEG ('+G.methode.toUpperCase()+')','',''],
-    ...G.rows.map(r=>[r[0],r[1],''])
-  ];
-  var ws=XLSX.utils.aoa_to_sheet(s);
-  ws['!cols']=[{wch:48},{wch:24},{wch:24}];
-  XLSX.utils.book_append_sheet(wb,ws,'Kaufpreisaufteilung');
-  // Blatt 2: AK/HK
-  var s2=[['AK/HK – ANSCHAFFUNGSKOSTEN / HERSTELLUNGSKOSTEN',''],['',''],['Position','Betrag (€)'],['Kaufpreis',parseDe(document.getElementById('ak_kaufpreis').value)||0]];
-  document.querySelectorAll('[id^=nk_][id$=_val]').forEach(el=>{s2.push([document.getElementById(el.id.replace('_val','_bez')).value||'Nebenkosten',parseDe(el.value)||0]);});
-  s2.push([''],['Summe AK/HK inkl. Nebenkosten',G.akSum||0],[''],['Anteil Gebäude (%)',G.pct_geb?(G.pct_geb*100).toFixed(2):'—'],['Anteil Boden (%)',G.pct_bod?(G.pct_bod*100).toFixed(2):'—'],['Anteil Grund und Boden (€)',G.akBoden||0],['Anteil Gebäude / BMG AfA (€)',G.akGeb||0]);
-  var ws2=XLSX.utils.aoa_to_sheet(s2);ws2['!cols']=[{wch:40},{wch:24}];
-  XLSX.utils.book_append_sheet(wb,ws2,'AK-HK');
-  // Blatt 3: Info
-  var s3=[['Hinweise'],[''],['Grundlage','BMF-Arbeitshilfe Kaufpreisaufteilung (Fassung Januar 2025/2026)'],['Rechtsgrundlagen','§§ 6 ff. ImmoWertV, §§ 7, 21 EStG, BFH IX R 86/97'],['Verfahren',G.methode],['Erstellt am',new Date().toLocaleDateString('de-DE')],['Tool','Kaufpreisaufteilung-Rechner · Robin Glowania'],[''],['Hinweis','Qualifizierte Schätzung; sachverständig widerlegbar. Kein Ersatz für individuelle Steuerberatung.']];
-  var ws3=XLSX.utils.aoa_to_sheet(s3);ws3['!cols']=[{wch:20},{wch:65}];
-  XLSX.utils.book_append_sheet(wb,ws3,'Hinweise');
-  var fn='KPA_'+(G.lage||'').replace(/[^a-zA-Z0-9]/g,'_').substring(0,25)+'_'+(G.kaufdatum||'').replace(/\./g,'')+'.xlsx';
-  XLSX.writeFile(wb,fn);
-}
+function berechnen(){
+  let kaufpreis=parseDE(document.getElementById('kaufpreis').value);
+  if(!kaufpreis){alert('Bitte Kaufpreis eingeben.');return;}
+  if(!parseDE(document.getElementById('flaeche').value)){alert('Bitte Wohn-/Nutzfläche eingeben.');return;}
+  if(!parseInt(document.getElementById('baujahr').value)){alert('Bitte Baujahr eingeben.');return;}
+  if(!parseDE(document.getElementById('grundstuecksgroesse').value)){alert('Bitte Grundstücksgröße eingeben.');return;}
+  if(!parseDE(document.getElementById('bodenrichtwert').value)){alert('Bitte Bodenrichtwert eingeben.');return;}
 
-/* ─── PDF EXPORT ─── */
-function exportPDF(){
-  if(!G.kaufpreis){alert('Bitte zuerst berechnen.');return;}
-  var {jsPDF}=window.jspdf;
-  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  var ml=18,W=210,cw=W-ml*2,y=0;
-  var ca=[46,122,80],ct=[15,31,22],cm=[77,122,94],cl=[230,242,235];
-  function chk(n){if(y+n>278){doc.addPage();y=12;}}
-  function hr(){chk(5);doc.setDrawColor(...cl);doc.setLineWidth(0.25);doc.line(ml,y,W-ml,y);y+=4;}
-  function row(k,v,bold){chk(6);doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(9);doc.setTextColor(...(bold?ct:cm));doc.text(k,ml,y);doc.setTextColor(...ct);doc.text(String(v),W-ml,y,{align:'right'});y+=5.5;}
-  function sec(t){chk(10);doc.setFillColor(...ca);doc.rect(ml,y-3.5,2.5,5.5,'F');doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...ca);doc.text(t.toUpperCase(),ml+5,y);y+=8;}
+  let bw=berechneBodenwert();
+  let bodenwert=bw.bodenwert;
+  let gebaeudewert=0;
+  let verfahrenswert=0;
+  let methode=window.currentMethod;
+  let calcHTML='';
+  let warnings=[];
 
-  // Header
-  doc.setFillColor(...cl);doc.rect(0,0,210,24,'F');
-  doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(...ca);doc.text('Kaufpreisaufteilung',ml,13);
-  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...cm);doc.text('BMF-Arbeitshilfe 2026 · §§ 6 ff. ImmoWertV',ml,20);doc.text(new Date().toLocaleDateString('de-DE'),W-ml,20,{align:'right'});
-  y=32;
-
-  sec('Grunddaten');
-  if(G.lage)row('Lage des Grundstücks',G.lage);
-  if(G.kaufdatum)row('Datum des Kaufvertrages',G.kaufdatum);
-  row('Grundstücksart',document.getElementById('grundstuecksart').selectedOptions[0].text);
-  row('Baujahr',G.baujahr);row('Wohn-/Nutzfläche',fmtEur(G.wfl)+' m²');
-  hr();
-
-  sec('Kaufpreisaufteilung – Ergebnis ('+G.methode+')');
-  // Ergebnis-Box
-  doc.setFillColor(...cl);doc.roundedRect(ml,y-1,cw,36,2,2,'F');
-  doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...ct);
-  doc.text('Ermittelte Einzelwerte',ml+4,y+6);doc.text('Kaufpreisanteile',W-ml-4,y+6,{align:'right'});
-  doc.setFontSize(9);doc.setTextColor(...cm);doc.setFont('helvetica','normal');
-  doc.text('Grund und Boden:',ml+4,y+14);doc.setTextColor(...ct);doc.text(fmtEur(G.bodenwert)+' € ('+( G.pct_bod*100).toFixed(2)+'%)',ml+44,y+14);doc.text(fmtEur(G.kp_bod)+' € ('+(G.pct_bod*100).toFixed(2)+'%)',W-ml-4,y+14,{align:'right'});
-  doc.setTextColor(...cm);doc.text('Gebäude (BMG AfA):',ml+4,y+22);doc.setFont('helvetica','bold');doc.setTextColor(...ca);doc.text(fmtEur(G.gebaeudewert)+' € ('+(G.pct_geb*100).toFixed(2)+'%)',ml+44,y+22);doc.text(fmtEur(G.kp_geb)+' € ('+(G.pct_geb*100).toFixed(2)+'%)',W-ml-4,y+22,{align:'right'});
-  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...cm);doc.text('Kaufpreis gesamt: '+fmtEur(G.kaufpreis)+' €',ml+4,y+30);
-  y+=42;hr();
-
-  if(G.akSum>0){
-    sec('AK/HK-Aufteilung');
-    row('Summe AK/HK inkl. Nebenkosten',fmtEur(G.akSum)+' €',true);
-    if(G.akGeb){row('Anteil Grund und Boden',fmtEur(G.akBoden)+' €');row('Anteil Gebäude / BMG AfA',fmtEur(G.akGeb)+' €',true);}
-    hr();
+  if(methode==='vw'){
+    let r=vergleichswert();
+    if(!r.faktor){alert('Bitte Vergleichsfaktor eingeben.');return;}
+    verfahrenswert=r.vergleichswert;
+    gebaeudewert=verfahrenswert-bodenwert;
+    if(gebaeudewert<0){warnings.push('Negativer Gebäudewert — Vergleichsfaktor prüfen.');gebaeudewert=0;}
+    calcHTML=buildVWDetails(r,bw,verfahrenswert,gebaeudewert);
+  } else if(methode==='ew'){
+    let r=ertragswert();
+    if(!r.miete){alert('Bitte monatliche Miete eingeben.');return;}
+    verfahrenswert=r.ertragswert;
+    gebaeudewert=r.gebaeudeertragswert;
+    if(r.gebaeudereinertrag<=0){warnings.push('Reinertragsanteil der baulichen Anlagen ist 0 oder negativ — Bodenwert übersteigt Ertragswert (mögliches Liquidationsobjekt). Prüfen Sie Grundstücksgröße, Bodenrichtwert, Wohnfläche und Miete.');}
+    calcHTML=buildEWDetails(r,bw,verfahrenswert,gebaeudewert);
+  } else {
+    let r=sachwert();
+    if(!r){alert('Berechnung nicht möglich.');return;}
+    verfahrenswert=r.marktangepasst;
+    gebaeudewert=r.gebaeudeAnteil;
+    calcHTML=buildSWDetails(r,bw,verfahrenswert,gebaeudewert);
   }
 
-  sec('Rechenweg ('+G.methode+')');
-  G.rows.forEach(r=>row(r[0],r[1]));
-  hr();
+  let summe=bodenwert+gebaeudewert;
+  if(summe<=0){alert('Ungültige Berechnung — bitte Eingaben prüfen.');return;}
 
-  if(G.warns&&G.warns.length){G.warns.forEach(w=>{chk(14);doc.setFillColor(255,248,225);doc.rect(ml,y-3,cw,12,'F');doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(150,100,0);doc.splitTextToSize('⚠ '+w,cw-4).forEach(l=>{doc.text(l,ml+2,y);y+=4;});y+=3;});hr();}
+  let pctGrund=(bodenwert/summe)*100;
+  let pctGebaeude=(gebaeudewert/summe)*100;
+  let kpAnteilGrund=kaufpreis*pctGrund/100;
+  let kpAnteilGebaeude=kaufpreis*pctGebaeude/100;
 
-  chk(16);doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(...cm);
-  doc.splitTextToSize('Alle Berechnungen basieren auf der BMF-Arbeitshilfe zur Kaufpreisaufteilung (Fassung Januar 2025/2026) i.V.m. ImmoWertV. Qualifizierte Schätzung; sachverständig widerlegbar (BFH, IX R 86/97). Kein Ersatz für individuelle Steuerberatung. Alle Angaben ohne Gewähr.',cw).forEach(l=>{chk(5);doc.text(l,ml,y);y+=3.8;});
+  // Anzeige
+  document.getElementById('valGrund').textContent=fmtEUR(kpAnteilGrund);
+  document.getElementById('valGebaeude').textContent=fmtEUR(kpAnteilGebaeude);
+  document.getElementById('valGesamt').textContent=fmtEUR(kaufpreis);
+  document.getElementById('pctGrund').textContent=fmtPct(pctGrund);
+  document.getElementById('pctGebaeude').textContent=fmtPct(pctGebaeude);
 
-  var tp=doc.internal.getNumberOfPages();
-  for(var i=1;i<=tp;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...cm);doc.text('Robin Glowania',ml,290);doc.text('Seite '+i+' / '+tp,W-ml,290,{align:'right'});}
+  document.getElementById('barGrund').style.width=pctGrund+'%';
+  document.getElementById('barGebaeude').style.width=pctGebaeude+'%';
+  document.getElementById('barGrund').textContent=pctGrund>15?fmtPct(pctGrund):'';
+  document.getElementById('barGebaeude').textContent=pctGebaeude>15?fmtPct(pctGebaeude):'';
 
-  var fn='KPA_'+(G.lage||'').replace(/[^a-zA-Z0-9]/g,'_').substring(0,25)+'_'+(G.kaufdatum||'').replace(/\./g,'')+'.pdf';
-  doc.save(fn);
-}
+  document.getElementById('calcContent').innerHTML=calcHTML;
 
-/* ─── FIKTIVES BAUJAHR ─── */
-var MOD=[{n:'Heizungsanlage',pv:3,pt:1.5},{n:'Sanitärausstattung (Bad/WC)',pv:3,pt:1.5},{n:'Elektroinstallation',pv:2,pt:1},{n:'Fenster',pv:2,pt:1},{n:'Wärmedämmung Außenwände',pv:2,pt:1},{n:'Wärmedämmung Dach',pv:2,pt:1},{n:'Grundrissänderung',pv:1,pt:0.5},{n:'Fußböden',pv:1,pt:0.5},{n:'Treppenhaus',pv:1,pt:0.5},{n:'Fassade/Außengestaltung',pv:1,pt:0.5},{n:'Balkon/Terrasse',pv:1,pt:0.5},{n:'Dach (Konstruktion)',pv:1,pt:0.5}];
-var mc=0;
-function addMod(){
-  mc++;var id='m_'+mc;
-  var opts=MOD.map((m,i)=>`<option value="${i}">${m.n}</option>`).join('');
-  var d=document.createElement('div');d.className='ak-card';d.id=id;
-  d.innerHTML=`<div class="grid3" style="align-items:end;"><label style="margin-bottom:0;"><span class="lbl">Maßnahme</span><select id="${id}_a" onchange="fiktivCalc()">${opts}</select></label><label style="margin-bottom:0;"><span class="lbl">Umfang</span><select id="${id}_u" onchange="fiktivCalc()"><option value="voll">Vollständig</option><option value="teil">Teilweise</option></select></label><button class="ak-remove" onclick="this.closest('.ak-card').remove();fiktivCalc()">✕ Entfernen</button></div><label style="margin-top:10px;margin-bottom:0;"><span class="lbl">Jahr der Maßnahme</span><input type="text" id="${id}_j" placeholder="z. B. 2015" onblur="fiktivCalc()" onfocus="rawInput(this)"></label>`;
-  document.getElementById('mod-rows').appendChild(d);fiktivCalc();
-}
-function fiktivCalc(){
-  var u=parseInt(document.getElementById('fik_urspr').value)||0,kj=parseInt(document.getElementById('fik_kauf').value)||new Date().getFullYear();
-  if(!u){document.getElementById('fiktiv-result').style.display='none';return;}
-  var tot=0,lines='';
-  document.querySelectorAll('[id^=m_][id$=_a]').forEach(el=>{
-    var bid=el.id.replace('_a',''),art=parseInt(el.value),umf=document.getElementById(bid+'_u').value,jahr=parseInt(document.getElementById(bid+'_j').value)||0;
-    if(!jahr)return;var alt=kj-jahr;if(alt>20)return;if(alt>10&&umf==='voll')umf='teil';
-    var m=MOD[art],p=umf==='voll'?m.pv:m.pt;tot+=p;
-    lines+=`<div class="info-row"><span class="key">${m.n} (${jahr}, ${umf==='voll'?'vollst.':'teilw.'})</span><span class="val">+${p} Pkt.</span></div>`;
+  let wDiv=document.getElementById('warnings');
+  wDiv.innerHTML='';
+  warnings.forEach(w=>{
+    let d=document.createElement('div');
+    d.className='warning';
+    d.textContent=w;
+    wDiv.appendChild(d);
   });
-  var pt=Math.min(20,tot),vs=Math.round(pt*2),fikt=Math.min(kj-1,u+vs);
-  document.getElementById('fiktiv-result').style.display='block';
-  document.getElementById('fik-ergebnis').textContent=fikt||'—';
-  document.getElementById('fik-punkte').textContent=pt.toLocaleString('de-DE',{minimumFractionDigits:1});
-  document.getElementById('fik-hinweis').textContent=vs>0?`Baujahr ${u} + ${vs} Jahre = ${fikt}`:'Keine berücksichtigungsfähigen Modernisierungen';
-  document.getElementById('fik-detail').innerHTML=lines||'<p style="color:var(--text-muted);font-size:12px;font-family:\'IBM Plex Mono\',monospace;">Noch keine Maßnahmen eingetragen</p>';
+
+  document.getElementById('result').classList.add('show');
+  document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
+function buildVWDetails(r,bw,vw,gw){
+  let h='';
+  h+='<div class="calc-row"><span>Bodenwert (Fläche × Bodenrichtwert)</span><span>'+fmtEUR(bw.bodenwertOhneTeilfl)+'</span></div>';
+  if(bw.bodenwertTeilfl>0)h+='<div class="calc-row"><span>+ Hinterland-Fläche</span><span>'+fmtEUR(bw.bodenwertTeilfl)+'</span></div>';
+  if(isWohnungseigentum())h+='<div class="calc-row"><span>× Miteigentumsanteil</span><span></span></div>';
+  h+='<div class="calc-row bold"><span>Bodenwert</span><span>'+fmtEUR(bw.bodenwert)+'</span></div>';
+  h+='<div class="calc-row" style="margin-top:14px;"><span>Vergleichsfaktor × Wohnfläche ('+fmtDE(r.faktor,0)+' € × '+fmtDE(r.flaeche,0)+' m²)</span><span>'+fmtEUR(r.faktor*r.flaeche)+'</span></div>';
+  if(r.garagen>0)h+='<div class="calc-row"><span>+ '+r.garagen+' Garagenstellplätze × '+fmtDE(r.faktorG)+' €</span><span>'+fmtEUR(r.garagen*r.faktorG)+'</span></div>';
+  if(r.tiefgaragen>0)h+='<div class="calc-row"><span>+ '+r.tiefgaragen+' Tiefgaragenstellplätze × '+fmtDE(r.faktorT)+' €</span><span>'+fmtEUR(r.tiefgaragen*r.faktorT)+'</span></div>';
+  h+='<div class="calc-row bold"><span>Vergleichswert (bebautes Grundstück)</span><span>'+fmtEUR(vw)+'</span></div>';
+  h+='<div class="calc-row"><span>− Bodenwert</span><span>'+fmtEUR(bw.bodenwert)+'</span></div>';
+  h+='<div class="calc-row bold"><span>= Gebäudewertanteil</span><span>'+fmtEUR(gw)+'</span></div>';
+  return h;
+}
+
+function buildEWDetails(r,bw,ew,gw){
+  let h='';
+  h+='<div class="calc-row"><span>Bodenwert</span><span>'+fmtEUR(bw.bodenwert)+'</span></div>';
+  h+='<div class="calc-row" style="margin-top:14px;"><span>Jahresrohertrag (Miete × 12)</span><span>'+fmtEUR(r.rohertrag)+'</span></div>';
+  h+='<div class="calc-row"><span>− Verwaltungskosten</span><span>'+fmtEUR(r.bwk.verwaltung)+'</span></div>';
+  h+='<div class="calc-row"><span>− Instandhaltungskosten</span><span>'+fmtEUR(r.bwk.instandhaltung)+'</span></div>';
+  h+='<div class="calc-row"><span>− Mietausfallwagnis</span><span>'+fmtEUR(r.bwk.mietausfall)+'</span></div>';
+  h+='<div class="calc-row bold"><span>Reinertrag des Grundstücks</span><span>'+fmtEUR(r.reinertrag)+'</span></div>';
+  h+='<div class="calc-row"><span>− Bodenwertverzinsung ('+fmtDE(r.zins,2)+' %)</span><span>'+fmtEUR(r.bodenverzinsung)+'</span></div>';
+  h+='<div class="calc-row bold"><span>Gebäudereinertrag</span><span>'+fmtEUR(r.gebaeudereinertrag)+'</span></div>';
+  h+='<div class="calc-row" style="margin-top:14px;"><span>Restnutzungsdauer ('+fmtDE(r.gnd,0)+' − '+fmtDE(r.alter,0)+' Jahre)</span><span>'+fmtDE(r.rnd,0)+' Jahre</span></div>';
+  h+='<div class="calc-row"><span>Barwertfaktor (Liegenschaftszins '+fmtDE(r.zins,2)+' %)</span><span>'+fmtDE(r.bwf,4)+'</span></div>';
+  h+='<div class="calc-row bold"><span>Gebäudeertragswert</span><span>'+fmtEUR(r.gebaeudeertragswert)+'</span></div>';
+  h+='<div class="calc-row bold" style="margin-top:6px;"><span>Ertragswert (Boden + Gebäude)</span><span>'+fmtEUR(ew)+'</span></div>';
+  return h;
+}
+
+function buildSWDetails(r,bw,sw,gw){
+  let h='';
+  h+='<div class="calc-row"><span>Bodenwert</span><span>'+fmtEUR(bw.bodenwert)+'</span></div>';
+  let stufeName=['Stufe 2 (vor 1995)','Stufe 3 (1995–2004)','Stufe 4 (ab 2005)'][r.stufe];
+  h+='<div class="calc-row" style="margin-top:14px;"><span>BGF-Kostenkennwert · '+stufeName+'</span><span>'+fmtEUR(r.bgfKKW)+'/m²</span></div>';
+  h+='<div class="calc-row"><span>× BGF/Wohnfläche-Faktor ('+fmtDE(r.bgfFaktor,1)+')</span><span>'+fmtEUR(r.wflKKW)+'/m²</span></div>';
+  if(r.wflFaktor!==1)h+='<div class="calc-row"><span>× Wohnungsgrößenfaktor ('+fmtDE(r.wflFaktor,2)+')</span><span>'+fmtEUR(r.wflKKWadj)+'/m²</span></div>';
+  h+='<div class="calc-row"><span>+ Außenanlagen pauschal 3 %</span><span>'+fmtEUR(r.mitAussen)+'/m²</span></div>';
+  h+='<div class="calc-row"><span>× Baupreisindex '+fmtDE(r.bauindex,1)+' (2010=100)</span><span>'+fmtEUR(Math.round(r.mitIndex))+'/m²</span></div>';
+  h+='<div class="calc-row"><span>× Regionalfaktor '+fmtDE(r.regional,4)+'</span><span>'+fmtEUR(r.mitRegional)+'/m²</span></div>';
+  h+='<div class="calc-row"><span>Restnutzungsdauer ('+fmtDE(r.gnd,0)+' − '+fmtDE(r.alter,0)+' Jahre)</span><span>'+fmtDE(r.rnd,0)+' Jahre</span></div>';
+  h+='<div class="calc-row"><span>× Alterswertminderung ('+fmtDE(r.restwertProz,2)+' % Restwert)</span><span>'+fmtEUR(r.thkProm2)+'/m²</span></div>';
+  h+='<div class="calc-row"><span>× Wohnfläche '+fmtDE(r.flaeche,0)+' m²</span><span></span></div>';
+  h+='<div class="calc-row bold"><span>Gebäudesachwert</span><span>'+fmtEUR(r.gebaeudesachwert)+'</span></div>';
+  h+='<div class="calc-row" style="margin-top:14px;"><span>Bodenwert + Gebäudesachwert</span><span>'+fmtEUR(r.vorlaeufig)+'</span></div>';
+  h+='<div class="calc-row"><span>× Sachwertfaktor '+fmtDE(r.markt,4)+'</span><span></span></div>';
+  h+='<div class="calc-row bold"><span>Marktangepasster Sachwert</span><span>'+fmtEUR(sw)+'</span></div>';
+  h+='<div class="calc-row"><span>− Bodenwert</span><span>'+fmtEUR(bw.bodenwert)+'</span></div>';
+  h+='<div class="calc-row bold"><span>= Gebäudewertanteil</span><span>'+fmtEUR(gw)+'</span></div>';
+  return h;
+}
+
+function resetForm(){
+  document.querySelectorAll('input[type="text"],input[type="number"],input[type="date"],textarea').forEach(i=>i.value='');
+  document.getElementById('garagen').value=0;
+  document.getElementById('tiefgaragen').value=0;
+  document.getElementById('result').classList.remove('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Init
+document.getElementById('kaufdatum').value=new Date().toISOString().split('T')[0];
+onGebaeudeartChange();
 </script>
 </body>
 </html>
