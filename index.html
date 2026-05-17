@@ -23,6 +23,9 @@ header{text-align:center;margin-bottom:32px;}
 h1{font-family:'Playfair Display',serif;font-size:clamp(30px,5vw,46px);font-weight:600;line-height:1.15;color:var(--text);margin-bottom:8px;}
 h1 span{color:var(--accent);}
 .subtitle{font-size:12px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.5px;}
+.hdr-row{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;}
+.gtools-link{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.5px;color:var(--text-muted);text-decoration:none;border:1px solid var(--border);padding:3px 10px;transition:color .2s,border-color .2s;}
+.gtools-link:hover{color:var(--accent);border-color:var(--accent);}
 .card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);padding:22px 24px;margin-bottom:18px;}
 .card-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);margin-bottom:18px;}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -90,7 +93,10 @@ footer{text-align:center;padding:32px 0 24px;font-family:'IBM Plex Mono',monospa
 
   <header>
     <h1><span>KPA</span>-Rechner</h1>
-    <p class="subtitle">Kaufpreisaufteilung nach BMF-Arbeitshilfe · Stand März 2026</p>
+    <div class="hdr-row">
+      <p class="subtitle">Kaufpreisaufteilung nach BMF-Arbeitshilfe · Stand März 2026</p>
+      <a href="https://rglowania.github.io/gtools/" class="gtools-link">Part of gTools ↗</a>
+    </div>
   </header>
 
   <!-- Stammdaten -->
@@ -323,7 +329,7 @@ footer{text-align:center;padding:32px 0 24px;font-family:'IBM Plex Mono',monospa
 
 </div>
 
-<footer>&copy; Robin Glowania &middot; Zuletzt aktualisiert: 30.04.2026</footer>
+<footer>&copy; Robin Glowania &middot; Zuletzt aktualisiert: 17.05.2026</footer>
 
 <script>
 function setTheme(t){
@@ -352,6 +358,7 @@ const NHK = {
 };
 
 // Baupreisindex (2010=100), Wohngebäude / Nichtwohngebäude
+// 2027/2028: Platzhalter auf 2026-Niveau bis offizielle Werte vorliegen
 const BAUINDEX = {
   2010:[100,100],2011:[102.8,103],2012:[105.4,105.5],2013:[107.5,107.6],
   2014:[109.4,109.6],2015:[111.1,111.4],2016:[113.4,113.9],2017:[116.8,117.4],
@@ -477,7 +484,7 @@ function vergleichswert(){
 // Verfahren 2 — Ertragswertverfahren
 function ertragswert(){
   let miete=parseDE(document.getElementById('ewMiete').value);
-  let einheiten=parseInt(document.getElementById('ewEinheiten').value);
+  let einheiten=parseInt(document.getElementById('ewEinheiten').value)||0;
   let flaeche=parseDE(document.getElementById('flaeche').value);
   let garagen=parseInt(document.getElementById('garagen').value)||0;
   let baujahr=parseInt(document.getElementById('baujahr').value);
@@ -579,7 +586,7 @@ function sachwert(){
 
   // Wohnungsgrößenfaktor (nur ETW & Teileigentum MFH)
   let wflFaktor=1;
-  if(isWohnungseigentum()||g==='WE'){
+  if(isWohnungseigentum()){
     if(flaeche<=35)wflFaktor=1.1;
     else if(flaeche>=135)wflFaktor=0.85;
   }
@@ -600,15 +607,10 @@ function sachwert(){
   let gnd=GND[g]||80;
   let alter=jahr-baujahr;
   let rnd=Math.max(gnd*0.3, gnd-alter);
-  let restwertProz=Math.max(30, (rnd/gnd)*100);
+  let restwertProz=(rnd/gnd)*100;
   let thkProm2=Math.round(mitRegional*restwertProz/100);
 
   let gebaeudesachwert=thkProm2*flaeche;
-  if(isWohnungseigentum()){
-    let z=parseFloat(document.getElementById('meaZaehler').value);
-    let n=parseFloat(document.getElementById('meaNenner').value);
-    // Bei WE: Wohnfläche bezieht sich bereits auf die Wohnung, Bodenwert wird MEA-anteilig
-  }
 
   // Vorläufiger Sachwert
   let vorlaeufig=bw.bodenwert+gebaeudesachwert;
@@ -648,7 +650,7 @@ function berechnen(){
     if(!r.miete){alert('Bitte monatliche Miete eingeben.');return;}
     verfahrenswert=r.ertragswert;
     gebaeudewert=r.gebaeudeertragswert;
-    if(r.gebaeudereinertrag<=0){warnings.push('Reinertragsanteil der baulichen Anlagen ist 0 oder negativ — Bodenwert übersteigt Ertragswert (mögliches Liquidationsobjekt). Prüfen Sie Grundstücksgröße, Bodenrichtwert, Wohnfläche und Miete.');}
+    if(r.gebaeudereinertrag<=0){warnings.push('Reinertragsanteil der baulichen Anlagen ist 0 oder negativ — Bodenwert übersteigt Ertragswert (mögliches Liquidationsobjekt). Prüfen Sie Grundstücksgröße, Bodenrichtwert, Wohnfläche und Miete.');gebaeudewert=0;}
     calcHTML=buildEWDetails(r,bw,verfahrenswert,gebaeudewert);
   } else {
     let r=sachwert();
@@ -697,7 +699,11 @@ function buildVWDetails(r,bw,vw,gw){
   let h='';
   h+='<div class="calc-row"><span>Bodenwert (Fläche × Bodenrichtwert)</span><span>'+fmtEUR(bw.bodenwertOhneTeilfl)+'</span></div>';
   if(bw.bodenwertTeilfl>0)h+='<div class="calc-row"><span>+ Hinterland-Fläche</span><span>'+fmtEUR(bw.bodenwertTeilfl)+'</span></div>';
-  if(isWohnungseigentum())h+='<div class="calc-row"><span>× Miteigentumsanteil</span><span></span></div>';
+  if(isWohnungseigentum()){
+    let z=parseFloat(document.getElementById('meaZaehler').value);
+    let n=parseFloat(document.getElementById('meaNenner').value);
+    if(z>0&&n>0)h+='<div class="calc-row"><span>× Miteigentumsanteil '+z+'/'+n+'</span><span>'+fmtDE(z/n,4)+'</span></div>';
+  }
   h+='<div class="calc-row bold"><span>Bodenwert</span><span>'+fmtEUR(bw.bodenwert)+'</span></div>';
   h+='<div class="calc-row" style="margin-top:14px;"><span>Vergleichsfaktor × Wohnfläche ('+fmtDE(r.faktor,0)+' € × '+fmtDE(r.flaeche,0)+' m²)</span><span>'+fmtEUR(r.faktor*r.flaeche)+'</span></div>';
   if(r.garagen>0)h+='<div class="calc-row"><span>+ '+r.garagen+' Garagenstellplätze × '+fmtDE(r.faktorG)+' €</span><span>'+fmtEUR(r.garagen*r.faktorG)+'</span></div>';
